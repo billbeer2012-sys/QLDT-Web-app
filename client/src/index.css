@@ -1,0 +1,25 @@
+/*
+* Đường dẫn file: D:\QLDT-app\client\src\index.css
+* Cập nhật: 28/08/2025
+* Tóm tắt những nội dung cập nhật:
+* - Bổ sung lớp tiện ích `.table-row-hover` để tạo hiệu ứng highlight
+* cho các dòng trong bảng khi di chuột qua.
+* - Lớp này hỗ trợ cả giao diện sáng (light) và tối (dark).
+*/
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+}
+
+/* BỔ SUNG: Tiện ích highlight cho dòng của bảng */
+@layer components {
+  .table-row-hover tbody tr {
+    @apply transition-colors duration-150 cursor-pointer;
+  }
+  .table-row-hover tbody tr:hover {
+    @apply bg-blue-100 dark:bg-blue-900/40;
+  }
+}

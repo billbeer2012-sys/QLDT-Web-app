@@ -1,0 +1,15 @@
+# Ignore thư mục node_modules ở root
+node_modules/
+# Ignore file .env ở root
+.env
+
+# Ignore các thư mục/tập tin trong client/
+client/dist/
+client/node_modules/
+client/.env.*
+client/.gitinore
+
+# Ignore các thư mục/tập tin trong server/
+server/node_modules/
+server/SSL/
+server/.env
