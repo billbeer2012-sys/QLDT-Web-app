@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu thông tin sinh viên - CamauVKC</title>
+<!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-ZDNLZR2VBG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-ZDNLZR2VBG');
+</script>   
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+		:root {
+            --blue: #0055a5;
+            --orange: #ff6600;
+            --black: #212529;
+            --white: #ffffff;
+        }
+        /* --- BẮT ĐẦU CẬP NHẬT CSS --- */
+        /* Giữ nguyên các style cũ */
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+        }
+        .header-fixed {
+            backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, #003399 0%, #0066cc 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fbbf24;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        /* Footer Styles */
+        .footer {
+            background: linear-gradient(135deg, #003399 0%, #0066cc 100%);
+            color: white;
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+        .search-title {
+            color: #0056b3;
+            border-bottom: 2px solid #0056b3;
+        }
+        .search-button {
+            background-color: #007bff;
+        }
+        .search-button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: #dc3545;
+            border-left: 4px solid #dc3545;
+            background-color: rgba(220, 53, 69, 0.1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        @media (min-width: 768px) {
+            .info-grid {
+                grid-template-columns: 180px 1fr;
+                gap: 2rem;
+            }
+        }
+        .student-avatar {
+            width: 180px;
+            height: 240px;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+            border-radius: 8px;
+        }
+        .info-item {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+        .info-label {
+            font-weight: 500;
+            color: #555;
+        }
+        .info-value {
+            font-weight: bold;
+            color: #111;
+        }
+
+        /* Bổ sung style cho nút điều hướng */
+        .nav-button {
+            background-color: #e9ecef;
+            color: #495057;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .nav-button:hover:not(:disabled) {
+            background-color: #007bff;
+            color: white;
+        }
+        .nav-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        /* --- KẾT THÚC CẬP NHẬT CSS --- */
+    </style>
+</head>
+<body class="bg-gray-50">
+   <body class="bg-gray-50">
+    <!-- Header -->
+	<header class="header-fixed fixed top-0 left-0 right-0 z-50 shadow-lg" style="top: 0;">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <<img src="https://camauvkc.edu.vn/img/Logo.jpg" alt="Logo trường" class="logo-circle">
+                    <div class="hidden md:block">
+                        <h1 class="text-yellow-200 font-bold text-lg leading-tight">
+                            UBND TỈNH CÀ MAU
+                        </h1>
+						<h1 class="text-white font-bold text-lg leading-tight">
+                            TRƯỜNG CAO ĐẲNG NGHỀ VIỆT NAM - HÀN QUỐC CÀ MAU
+                        </h1>
+                    </div>
+                    <div class="md:hidden">
+                        <h1 class="text-yellow-200 font-bold text-sm leading-tight">
+                            UBND TỈNH CÀ MAU
+                        </h1>
+						<h1 class="text-white font-bold text-sm leading-tight">
+                            TRƯỜNG CAO ĐẲNG NGHỀ VIỆT NAM - HÀN QUỐC CÀ MAU
+                        </h1>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </header>
+
+ 
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 pt-24 pb-2">
+        <div class="bg-blue-50 p-4 rounded-lg mb-6">
+			<h2 class="search-title text-2xl font-bold text-center pb-2">TRA CỨU THÔNG TIN SINH VIÊN</h2>
+		</div>
+		
+		<div class="bg-white p-6 rounded-lg shadow-md mb-6 fade-in">
+            <div>
+                <label for="searchInput" class="block mb-2 font-medium text-gray-700">Nhập Mã số sinh viên hoặc Họ và tên hoặc CCCD</label>
+                <input type="text" id="searchInput" placeholder="Ví dụ: K24CDDCN030 hoặc Nguyễn Văn An hoặc 096501231234" class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                <button onclick="searchSinhVien()" class="search-button w-full mt-3 p-3 text-white font-bold rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i> Tìm kiếm
+                </button>
+            </div>
+        </div>
+        
+        <div class="bg-white p-6 rounded-lg shadow-md" id="result">
+            <!-- Kết quả tìm kiếm sẽ được hiển thị ở đây -->
+        </div>
+	</main>
+    
+	<!-- Footer -->
+    <footer class="footer">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h4 class="text-x1 text-center font-bold mb-1">TRƯỜNG CAO ĐẲNG NGHỀ VIỆT NAM - HÀN QUỐC CÀ MAU</h4>
+					<h5 class="font-semibold mb-1 text-center text-yellow-400">CA MAU VIETNAM - KOREA VOCATIONAL COLLEGE</h5>
+					<h5 class="font-semibold mb-2 text-center text-yellow-400">(CAMAUVKC)</h5>
+                     <div class="flex space-x-4 items-center justify-center text-center" style="margin-top:20px;">
+                        <a href="https://camauvkc.edu.vn" alt="Website" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><i class="fas fa-globe"></i></a>
+						<a href="https://facebook.com/camauvkc" alt="Fanpage" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://zalo.me/camauvkc" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><img src="https://camauvkc.edu.vn/img/Icon_Zalo.svg" alt="ZaloOA"></a>
+						<a href="https://youtube.com/@camauvkc" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><img src="https://camauvkc.edu.vn/img/Icon_Youtube.svg" alt="Youtube"></a>
+					</div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold mb-4">LIÊN HỆ</h4>
+                    <p class="mb-2 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Số 08, đường Mậu Thân, phường An Xuyên, tỉnh Cà Mau</p>
+                    <p class="mb-2 text-sm"><i class="fas fa-phone mr-2"></i> 02903.832.835</p>
+					<p class="mb-2 text-sm"><i class="fas fa-envelope mr-2"></i> <a href="mailto:camauvkc@camauvkc.edu.vn" class="hover:underline"> camauvkc@camauvkc.edu.vn</a></p>
+                   <p class="mb-2 flex mb-2 text-sm text-yellow-300"><i class="fas fa-headset mr-2 w-4 text-center"></i><span>02903.592.101 (ĐT) - 02903.592.102 (SV)</span></p>
+                </div>
+                <!--Map trường-->
+				<div>
+					<div class="rounded-lg shadow-md overflow-hidden">
+						<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1969.2305755919815!2d105.15840791790602!3d9.202981887153484!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31a149d5005493c7%3A0x55fe687b8b8dceb9!2zVHLGsOG7nW5nIENhbyDEkeG6s25nIG5naOG7gSBWaeG7h3QgTmFtIC0gSMOgbiBRdeG7kWMgQ8OgIE1hdQ!5e0!3m2!1svi!2s!4v1748395297134!5m2!1svi!2s" 
+							width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" 
+							referrerpolicy="no-referrer-when-downgrade"></iframe>
+					</div>
+				</div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-4 py-0 text-center">
+                <p class="text-sm text-yellow-400">© 2025 - H.M.Hiếu - CamauVKC</p>
+            </div>
+        </div>
+    </footer>
+	<!-- end Footer -->  
+        
+    <script>
+        // --- BẮT ĐẦU CẬP NHẬT JAVASCRIPT ---
+
+        // Biến toàn cục để lưu trữ kết quả và chỉ số hiện tại
+        let studentResults = [];
+        let currentIndex = 0;
+
+        /**
+         * Hàm hiển thị thông tin của một sinh viên dựa vào chỉ số (index)
+         * @param {number} index - Vị trí của sinh viên trong mảng studentResults
+         */
+        function displayStudent(index) {
+            const resultDiv = document.getElementById('result');
+            if (!studentResults || studentResults.length === 0 || index < 0 || index >= studentResults.length) {
+                resultDiv.innerHTML = '<p class="error p-4 text-center">Không có dữ liệu để hiển thị.</p>';
+                return;
+            }
+
+            const student = studentResults[index];
+            const { imageUrl, hoTen, ngaySinh, noiSinh, maso, khoaHoc, nganhHoc, bacDaoTao, tenLop, loaiHinhDT, ketThucKhoa, tinhTrang } = student;
+            
+            let html = `
+                <div class="info-grid fade-in">
+                    <div class="flex justify-center md:justify-start">
+                        <img 
+                            src="${imageUrl}" 
+                            alt="Ảnh sinh viên" 
+                            class="student-avatar"
+                            onerror="this.onerror=null; this.src='${imageUrl.replace('.jpg', '.PNG')}'; this.onerror=null; this.src='https://camauvkc.edu.vn/img/Logo.jpg';"
+                        >
+                    </div>
+                    <div>
+                        <div class="info-item"><span class="info-label">Họ và tên:</span> <span class="info-value text-blue-800">${hoTen}</span></div>
+                                               
+						<div class="info-item"><span class="info-label">Nơi sinh:</span> <span class="info-value">${noiSinh}</span></div>
+                        <div class="info-item"><span class="info-label">Mã sinh viên:</span> <span class="info-value text-blue-800">${maso}</span></div>
+                        <div class="info-item"><span class="info-label">Khóa học:</span> <span class="info-value">${khoaHoc}</span></div>
+                        <div class="info-item"><span class="info-label">Ngành học:</span> <span class="info-value">${nganhHoc}</span></div>
+                        <div class="info-item"><span class="info-label">Bậc học:</span> <span class="info-value">${bacDaoTao}</span></div>
+                        <div class="info-item"><span class="info-label">Tên lớp học:</span> <span class="info-value">${tenLop}</span></div>
+                        <div class="info-item"><span class="info-label">Loại hình ĐT:</span> <span class="info-value">${loaiHinhDT}</span></div>
+                        <div class="info-item"><span class="info-label">Kết thúc khóa:</span> <span class="info-value">${ketThucKhoa}</span></div>
+                        <div class="info-item border-none"><span class="info-label">Tình trạng:</span> 
+                            <span class="info-value px-3 py-1 text-sm rounded-full inline-block ${tinhTrang.colorClass}">${tinhTrang.text}</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Thêm phần điều hướng nếu có nhiều hơn 1 kết quả
+            if (studentResults.length > 1) {
+                html += `
+                    <div class="mt-6 pt-4 border-t border-gray-200 flex items-center justify-between">
+                        <span class="text-sm text-gray-600">
+                            Kết quả <strong class="text-blue-700">${index + 1}</strong> trên <strong class="text-blue-700">${studentResults.length}</strong>
+                        </span>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="showPreviousStudent()" id="prevBtn" class="nav-button" title="Sinh viên trước">
+                                <i class="fas fa-chevron-left"></i>
+                            </button>
+                            <button onclick="showNextStudent()" id="nextBtn" class="nav-button" title="Sinh viên kế tiếp">
+                                <i class="fas fa-chevron-right"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+
+            resultDiv.innerHTML = html;
+
+            // Vô hiệu hóa nút nếu cần
+            if (studentResults.length > 1) {
+                document.getElementById('prevBtn').disabled = index === 0;
+                document.getElementById('nextBtn').disabled = index === studentResults.length - 1;
+            }
+        }
+
+        /**
+         * Hàm hiển thị sinh viên kế tiếp
+         */
+        function showNextStudent() {
+            if (currentIndex < studentResults.length - 1) {
+                currentIndex++;
+                displayStudent(currentIndex);
+            }
+        }
+
+        /**
+         * Hàm hiển thị sinh viên trước đó
+         */
+        function showPreviousStudent() {
+            if (currentIndex > 0) {
+                currentIndex--;
+                displayStudent(currentIndex);
+            }
+        }
+
+        /**
+         * Hàm chính để tìm kiếm sinh viên
+         */
+        async function searchSinhVien() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<div class="text-center p-8"><i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i><p class="mt-2">Đang tìm kiếm...</p></div>';
+
+            if (!searchTerm) {
+                resultDiv.innerHTML = '<p class="error p-4 text-center">Vui lòng nhập thông tin tìm kiếm.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://camauvkc.edu.vn:3000/api/public/search-student?searchTerm=${encodeURIComponent(searchTerm)}`);
+                
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    throw new Error(errorData.error || `Lỗi ${response.status}: Không thể lấy dữ liệu.`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultDiv.innerHTML = `<p class="error p-4 text-center">${data.error}</p>`;
+                    studentResults = []; // Xóa kết quả cũ
+                } else if (Array.isArray(data) && data.length > 0) {
+                    studentResults = data;
+                    currentIndex = 0;
+                    displayStudent(currentIndex);
+                } else {
+                     resultDiv.innerHTML = `<p class="error p-4 text-center">Không tìm thấy thông tin sinh viên phù hợp.</p>`;
+                     studentResults = []; // Xóa kết quả cũ
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<p class="error p-4 text-center"><i class="fas fa-exclamation-triangle mr-2"></i>Lỗi: ${error.message}</p>`;
+            }
+        }
+
+        function handleUrlSearch() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const maso = urlParams.get('maso');
+            if (maso) {
+                document.getElementById('searchInput').value = maso;
+                searchSinhVien();
+            }
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchSinhVien();
+            }
+        });
+
+        window.addEventListener('load', handleUrlSearch);
+        // --- KẾT THÚC CẬP NHẬT JAVASCRIPT ---
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
 /*
  * Đường dẫn file: D:\QLDT-app\client\src\features\dashboard\TrainingDashboard.jsx
- * Phiên bản cập nhật: 22/01/2026
+ * Phiên bản cập nhật: 28/01/2026
  * Tóm tắt:
  * - Component Dashboard tiến độ đào tạo chính
  * - Hiển thị thống kê theo năm học với Year Selector
@@ -31,28 +31,151 @@ const StatCard = ({ title, value, icon: Icon, color = 'blue' }) => (
     </div>
 );
 
-// Custom Tooltip để kiểm soát thứ tự hiển thị
+// Custom Tooltip để kiểm soát thứ tự hiển thị và hiển thị tỷ lệ %
 const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
-        // Sắp xếp theo thứ tự: Số giờ KH -> Giờ TKB -> Đã đào tạo
-        const orderedPayload = [
-            payload.find(p => p.dataKey === 'totalPlannedHours'),
-            payload.find(p => p.dataKey === 'totalScheduledHours'),
-            payload.find(p => p.dataKey === 'totalCompletedHours'),
-        ].filter(Boolean);
+        // Lấy giá trị Số giờ KH làm cơ sở tính %
+        const plannedEntry = payload.find(p => p.dataKey === 'totalPlannedHours');
+        const scheduledEntry = payload.find(p => p.dataKey === 'totalScheduledHours');
+        const completedEntry = payload.find(p => p.dataKey === 'totalCompletedHours');
+
+        const plannedHours = plannedEntry?.value || 0;
+
+        // Tính tỷ lệ %
+        const scheduledPercent = plannedHours > 0 ? Math.round((scheduledEntry?.value || 0) / plannedHours * 100) : 0;
+        const completedPercent = plannedHours > 0 ? Math.round((completedEntry?.value || 0) / plannedHours * 100) : 0;
 
         return (
             <div className="bg-white dark:bg-gray-800 p-2 rounded shadow-lg border text-xs">
                 <p className="font-bold mb-1">{label}</p>
-                {orderedPayload.map((entry, index) => (
-                    <p key={index} style={{ color: entry.color }}>
-                        {entry.name}: {entry.value.toLocaleString('vi-VN')} giờ
+                {plannedEntry && (
+                    <p style={{ color: plannedEntry.color }}>
+                        {plannedEntry.name}: {plannedEntry.value.toLocaleString('vi-VN')} giờ
                     </p>
-                ))}
+                )}
+                {scheduledEntry && (
+                    <p style={{ color: scheduledEntry.color }}>
+                        {scheduledEntry.name}: {scheduledEntry.value.toLocaleString('vi-VN')} giờ ({scheduledPercent}%)
+                    </p>
+                )}
+                {completedEntry && (
+                    <p style={{ color: completedEntry.color }}>
+                        {completedEntry.name}: {completedEntry.value.toLocaleString('vi-VN')} giờ ({completedPercent}%)
+                    </p>
+                )}
             </div>
         );
     }
     return null;
+};
+
+// Component TimeProgressBar - Hiển thị tiến độ thời gian học kỳ
+const TimeProgressBar = ({ startDate, endDate, totalWeeks, colorScheme }) => {
+    const now = new Date();
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Tính toán các giá trị thời gian
+    const totalDays = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
+    const elapsedDays = Math.ceil((now - start) / (1000 * 60 * 60 * 24));
+
+    // Xác định trạng thái
+    let status = 'ongoing'; // ongoing, upcoming, completed
+    let timePercent = 0;
+    let currentWeek = 0;
+    let remainingDays = 0;
+    let statusText = '';
+
+    if (now < start) {
+        // Chưa bắt đầu
+        status = 'upcoming';
+        timePercent = 0;
+        remainingDays = Math.ceil((start - now) / (1000 * 60 * 60 * 24));
+        statusText = `Còn ${remainingDays} ngày nữa bắt đầu`;
+    } else if (now > end) {
+        // Đã kết thúc
+        status = 'completed';
+        timePercent = 100;
+        currentWeek = totalWeeks;
+        statusText = 'Đã hoàn thành';
+    } else {
+        // Đang diễn ra
+        status = 'ongoing';
+        timePercent = Math.min(Math.round((elapsedDays / totalDays) * 100), 100);
+        currentWeek = Math.min(Math.ceil(elapsedDays / 7), totalWeeks);
+        remainingDays = Math.ceil((end - now) / (1000 * 60 * 60 * 24));
+        statusText = `Tuần ${currentWeek}/${totalWeeks} • Còn ${remainingDays} ngày`;
+    }
+
+    // Format dates
+    const formatDate = (date) => {
+        const d = new Date(date);
+        return d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    };
+
+    // Màu sắc cho thanh tiến độ thời gian (xanh lá/teal để phân biệt với tiến độ đào tạo)
+    const getProgressColor = () => {
+        if (status === 'completed') return '#10b981'; // emerald-500
+        return colorScheme === 'blue' ? '#10b981' : '#14b8a6'; // emerald-500 hoặc teal-500
+    };
+
+    const getBadgeColor = () => {
+        if (status === 'upcoming') return 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400';
+        if (status === 'completed') return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
+        return '';
+    };
+
+    return (
+        <div className="mb-6">
+            {/* Header với thông tin */}
+            <div className="flex justify-between items-center text-xs text-gray-600 dark:text-gray-400 mb-1">
+                <span className="flex items-center gap-2">
+                    Thời gian học kỳ
+                    {status !== 'ongoing' && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${getBadgeColor()}`}>
+                            {status === 'upcoming' ? 'Sắp tới' : 'Hoàn thành'}
+                        </span>
+                    )}
+                </span>
+                <span className="flex items-center gap-2">
+                    <span className="text-gray-500 dark:text-gray-500">{statusText}</span>
+                    <span className="font-semibold">{timePercent}%</span>
+                </span>
+            </div>
+
+            {/* Progress Bar */}
+            <div className="relative w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+                <div
+                    className="h-3 rounded-full transition-all duration-500"
+                    style={{
+                        width: `${timePercent}%`,
+                        backgroundColor: getProgressColor()
+                    }}
+                ></div>
+
+                {/* Marker "Hôm nay" cho trạng thái đang diễn ra */}
+                {status === 'ongoing' && (
+                    <div
+                        className="absolute top-0 h-full flex flex-col items-center"
+                        style={{ left: `${timePercent}%`, transform: 'translateX(-50%)' }}
+                    >
+                        <div className="w-0 h-0 border-l-[5px] border-l-transparent border-r-[5px] border-r-transparent border-t-[6px] border-t-gray-700 dark:border-t-gray-300 -mt-0.5"></div>
+                    </div>
+                )}
+            </div>
+
+            {/* Footer với ngày bắt đầu/kết thúc */}
+            <div className="flex justify-between text-[10px] text-gray-400 dark:text-gray-500 mt-1">
+                <span>{formatDate(startDate)}</span>
+                {status === 'ongoing' && (
+                    <span className="text-gray-600 dark:text-gray-400 font-medium">
+                        ▼ Hôm nay
+                    </span>
+                )}
+                <span>{formatDate(endDate)}</span>
+            </div>
+        </div>
+    );
 };
 
 // Component SemesterSection - Hiển thị thống kê cho 1 học kỳ
@@ -75,7 +198,7 @@ const SemesterSection = ({ semester, colorScheme }) => {
                     title="Tổng số học phần"
                     value={summary.totalClasses}
                     icon={BookOpen}
-                    color={colorScheme}
+                    color="red"
                 />
                 <StatCard
                     title="Số giờ kế hoạch"
@@ -84,7 +207,7 @@ const SemesterSection = ({ semester, colorScheme }) => {
                     color="gray"
                 />
                 <StatCard
-                    title="Số giờ đã xếp TKB"
+                    title="Số giờ xếp TKB"
                     value={summary.totalScheduledHours}
                     icon={BarChart3}
                     color="amber"
@@ -93,29 +216,42 @@ const SemesterSection = ({ semester, colorScheme }) => {
                     title="Số giờ đã đào tạo"
                     value={summary.totalCompletedHours}
                     icon={CheckCircle}
-                    color="green"
+                    color="blue"
                 />
             </div>
 
-            {/* Progress Bar - CẬP NHẬT: Tăng margin bottom */}
+            {/* Progress Bar - CẬP NHẬT: Sử dụng inline style để đảm bảo màu hiển thị đúng */}
             <div className="mb-6">
                 <div className="flex justify-between text-xs text-gray-600 dark:text-gray-400 mb-1">
                     <span>Tiến độ đào tạo</span>
                     <span>{progressPercent}%</span>
                 </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                <div className="w-full bg-[#8b94a3] dark:bg-gray-700 rounded-full h-3">
                     <div
-                        className={`bg-${colorScheme}-500 h-2.5 rounded-full transition-all duration-500`}
-                        style={{ width: `${Math.min(progressPercent, 100)}%` }}
+                        className="h-3 rounded-full transition-all duration-500"
+                        style={{
+                            width: `${Math.min(progressPercent, 100)}%`,
+                            backgroundColor: colorScheme === 'blue' ? '#3b82f6' : '#6366f1'
+                        }}
                     ></div>
                 </div>
             </div>
+
+            {/* Time Progress Bar - Tiến độ thời gian học kỳ */}
+            {semester.ngayBatDau && semester.ngayKetThuc && (
+                <TimeProgressBar
+                    startDate={semester.ngayBatDau}
+                    endDate={semester.ngayKetThuc}
+                    totalWeeks={semester.soTuan}
+                    colorScheme={colorScheme}
+                />
+            )}
 
             {/* Chart - CẬP NHẬT: Tăng chiều cao để cân đối với chiều rộng */}
             {units.length > 0 && (
                 <div className="h-72">
                     <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={units} margin={{ top: 10, right: 20, left: 0, bottom: 60 }}>
+                        <BarChart data={units} margin={{ top: 10, right: 20, left: 0, bottom: 0 }}>
                             <CartesianGrid strokeDasharray="3 3" />
                             <XAxis
                                 dataKey="tenDV"
@@ -127,9 +263,9 @@ const SemesterSection = ({ semester, colorScheme }) => {
                             <YAxis tick={{ fontSize: 10 }} width={40} />
                             <Tooltip content={<CustomTooltip />} />
                             <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '5px' }} />
-                            <Bar dataKey="totalPlannedHours" name="Số giờ KH" fill="#9CA3AF" />
-                            <Bar dataKey="totalScheduledHours" name="Giờ TKB" fill="#F59E0B" />
-                            <Bar dataKey="totalCompletedHours" name="Đã đào tạo" fill="#10B981" />
+                            <Bar dataKey="totalPlannedHours" name="Số giờ KH" fill="#656c78" />
+                            <Bar dataKey="totalScheduledHours" name="Số giờ TKB" fill="#ba7809" />
+                            <Bar dataKey="totalCompletedHours" name="Đã đào tạo" fill="#3b82f6" />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>

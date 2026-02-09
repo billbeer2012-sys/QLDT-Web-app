@@ -1,11 +1,11 @@
 /*
  * Đường dẫn file: D:\QLDT-app\server\routes\dashboard-training.js
- * Phiên bản cập nhật: 22/01/2026
+ * Phiên bản cập nhật: 26/01/2026
  * Tóm tắt:
  * - API endpoint mới cho Dashboard tiến độ đào tạo
  * - GET /years: Lấy danh sách năm học
  * - GET /stats: Lấy thống kê theo năm học (cả 2 học kỳ)
- * - CẬP NHẬT: Logic xác định năm học mặc định theo tháng hiện tại
+ * - CẬP NHẬT: Logic xác định chỉ hiển thị học phần cho phép (Hocphan.HienthiHocphan<>0)
  */
 const express = require('express');
 const sql = require('mssql');
@@ -77,6 +77,10 @@ module.exports = function (poolPromise, authenticateToken) {
     // ========================================
     // API 2: Lấy thống kê tiến độ đào tạo theo năm học
     // GET /api/qdt/dashboard-training/stats?namHoc=25
+    // CẬP NHẬT 26/01/2026:
+    // - Sửa lỗi filter HienthiHocphan (xử lý NULL)
+    // - Dùng Donvi.Viettat thay vì Donvi.Donvi
+    // - Bổ sung Ngaybatdau, Ngayketthuc, Số tuần vào label học kỳ
     // ========================================
     router.get('/stats', authenticateToken, async (req, res) => {
         const { namHoc } = req.query;
@@ -89,11 +93,11 @@ module.exports = function (poolPromise, authenticateToken) {
             const pool = await poolPromise;
             const today = moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
 
-            // Lấy danh sách học kỳ trong năm học
+            // Lấy danh sách học kỳ trong năm học (bao gồm ngày bắt đầu, kết thúc)
             const semestersResult = await pool.request()
                 .input('NamHoc', sql.NVarChar, namHoc + '%')
                 .query(`
-                    SELECT MaHK, Hocky 
+                    SELECT MaHK, Hocky, Ngaybatdau, Ngayketthuc, Sotuan
                     FROM Hocky 
                     WHERE MaHK LIKE @NamHoc AND Sotuan > 0
                     ORDER BY MaHK ASC
@@ -103,36 +107,58 @@ module.exports = function (poolPromise, authenticateToken) {
 
             for (const semester of semestersResult.recordset) {
                 const maHK = semester.MaHK;
-                const hocKyLabel = semester.Hocky;
+                const ngayBatDau = semester.Ngaybatdau;
+                const ngayKetThuc = semester.Ngayketthuc;
+                const soTuan = semester.Sotuan;
+
+                // Tạo label học kỳ với thông tin ngày và số tuần
+                // Format: "Hk1 2025-2026 : 22 tuần (01/09/2025-01/02/2026)"
+                let hocKyLabel = semester.Hocky;
+                if (ngayBatDau && ngayKetThuc) {
+                    const startStr = moment(ngayBatDau).format('DD/MM/YYYY');
+                    const endStr = moment(ngayKetThuc).format('DD/MM/YYYY');
+                    // Sử dụng Sotuan từ database nếu có, nếu không thì tính
+                    const weeks = soTuan || Math.ceil(moment(ngayKetThuc).diff(moment(ngayBatDau), 'weeks', true));
+                    hocKyLabel = `${semester.Hocky} : ${String(weeks).padStart(2, '0')} tuần (${startStr} - ${endStr})`;
+                }
 
                 // Truy vấn thống kê theo từng đơn vị cho học kỳ này
+                // CẬP NHẬT: Sử dụng Viettat, xử lý HienthiHocphan NULL
                 const statsResult = await pool.request()
                     .input('MaHK', sql.NVarChar, maHK)
                     .input('Today', sql.Date, today)
                     .query(`
                         SELECT 
                             DV.MaDV,
-                            DV.Donvi AS TenDV,
+                            DV.Viettat AS TenDV,
                             COUNT(DISTINCT LHP.MaLHP) AS TotalClasses,
                             ISNULL(SUM(LHP.Tongsotiet), 0) AS TotalPlannedHours,
                             ISNULL((
                                 SELECT SUM(TKB.Sotiet) 
                                 FROM TKB 
-                                WHERE TKB.MaLHP IN (SELECT MaLHP FROM LopHP WHERE MaHK = @MaHK AND MaDV = DV.MaDV)
+                                INNER JOIN LopHP LHP2 ON TKB.MaLHP = LHP2.MaLHP
+                                INNER JOIN Hocphan HP2 ON LHP2.MaHP = HP2.MaHP
+                                WHERE LHP2.MaHK = @MaHK AND LHP2.MaDV = DV.MaDV
+                                  AND ISNULL(HP2.HienthiHocphan, 1) <> 0
                                   AND TKB.Hieuluc = 1
                             ), 0) AS TotalScheduledHours,
                             ISNULL((
                                 SELECT SUM(TKB.Sotiet) 
                                 FROM TKB 
-                                WHERE TKB.MaLHP IN (SELECT MaLHP FROM LopHP WHERE MaHK = @MaHK AND MaDV = DV.MaDV)
+                                INNER JOIN LopHP LHP3 ON TKB.MaLHP = LHP3.MaLHP
+                                INNER JOIN Hocphan HP3 ON LHP3.MaHP = HP3.MaHP
+                                WHERE LHP3.MaHK = @MaHK AND LHP3.MaDV = DV.MaDV
+                                  AND ISNULL(HP3.HienthiHocphan, 1) <> 0
                                   AND TKB.Hieuluc = 1
                                   AND TKB.Ngay <= @Today
                             ), 0) AS TotalCompletedHours
                         FROM LopHP LHP
                         INNER JOIN Donvi DV ON LHP.MaDV = DV.MaDV
-                        WHERE LHP.MaHK = @MaHK
-                        GROUP BY DV.MaDV, DV.Donvi
-                        ORDER BY DV.Donvi
+                        INNER JOIN Hocphan HP ON LHP.MaHP = HP.MaHP
+                        WHERE LHP.MaHK = @MaHK 
+                          AND ISNULL(HP.HienthiHocphan, 1) <> 0
+                        GROUP BY DV.MaDV, DV.Viettat
+                        ORDER BY DV.Viettat
                     `);
 
                 const units = statsResult.recordset.map(row => ({
@@ -155,6 +181,9 @@ module.exports = function (poolPromise, authenticateToken) {
                 semesters.push({
                     maHK: maHK,
                     hocKyLabel: hocKyLabel,
+                    ngayBatDau: ngayBatDau,
+                    ngayKetThuc: ngayKetThuc,
+                    soTuan: soTuan,
                     units: units,
                     summary: summary
                 });

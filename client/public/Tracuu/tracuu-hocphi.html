@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+
+	<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu học phí sinh viên - CamauVKC</title>
+ <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-LF4K39TF11"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-LF4K39TF11');
+</script>   
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+        }
+        .header-fixed {
+            backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, #003399 0%, #0066cc 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fbbf24;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        /* Footer Styles */
+        .footer {
+            background: linear-gradient(135deg, #003399 0%, #0066cc 100%);
+            color: white;
+            padding: 20px 0;
+            margin-top: 50px;
+        }
+        .search-button { background-color: #007bff; }
+        .search-button:hover { background-color: #0056b3; }
+        .error, .notice {
+            border-left-width: 4px;
+            padding: 1rem;
+            border-radius: 0.25rem;
+        }
+        .error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .notice.warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .notice.success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        
+        .info-section {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            margin-bottom: 1.5rem;
+        }
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1.5rem;
+        }
+        @media (min-width: 768px) {
+            .info-grid { grid-template-columns: 180px 1fr; }
+        }
+        .student-avatar {
+            width: 180px; height: 240px; object-fit: cover; border: 4px solid white;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); border-radius: 8px;
+        }
+        .info-item {
+            display: grid;
+            grid-template-columns: 110px 1fr;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px dashed #e0e0e0;
+        }
+         @media (min-width: 768px) {
+            .info-item { grid-template-columns: 130px 1fr; }
+        }
+        .info-label { font-weight: 500; color: #4b5563; }
+        .info-value { font-weight: bold; color: #1f2937; }
+        .qr-code-img {
+            border: 1px solid #ddd;
+            padding: 8px;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+	<header class="header-fixed fixed top-0 left-0 right-0 z-50 shadow-lg" style="top: 0;">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <<img src="https://camauvkc.edu.vn/img/Logo.jpg" alt="Logo trường" class="logo-circle">
+                    <div class="hidden md:block">
+                        <h1 class="text-yellow-200 font-bold text-lg leading-tight">
+                            UBND TỈNH CÀ MAU
+                        </h1>
+						<h1 class="text-white font-bold text-lg leading-tight">
+                            TRƯỜNG CAO ĐẲNG NGHỀ VIỆT NAM - HÀN QUỐC CÀ MAU
+                        </h1>
+                    </div>
+                    <div class="md:hidden">
+                        <h1 class="text-yellow-200 font-bold text-sm leading-tight">
+                            UBND TỈNH CÀ MAU
+                        </h1>
+						<h1 class="text-white font-bold text-sm leading-tight">
+                            TRƯỜNG CAO ĐẲNG NGHỀ VIỆT NAM - HÀN QUỐC CÀ MAU
+                        </h1>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </header>
+ 
+    <!-- Main Content -->
+    <main class="max-w-5xl mx-auto px-4 pt-24 pb-2">
+			<div class="bg-blue-50 p-4 rounded-lg mb-6">
+				<h2 id="pageTitle" class="text-2xl font-bold pb-2  text-center text-blue-800 uppercase">Học phí sinh viên
+				</h2>
+				<h3 id="pageSubTitle" class="text-lg font-semibold text-center text-gray-700 mt-1">
+				</h3>
+            </div>
+			<div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <label for="searchInput" class="block mb-2 font-medium text-gray-700">Nhập: Mã số SV hoặc Số CCCD</label>
+                <input type="text" id="searchInput" placeholder="Tìm kiếm chính xác... Ví dụ: K25CDCDT001 " class="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 outline-none">
+                <button onclick="searchTuition()" class="search-button w-full mt-3 p-3 text-white font-bold rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center">
+                    <i class="fas fa-search mr-2"></i> Tra cứu học phí
+                </button>
+            </div>
+        </div>
+        
+        <div id="resultContainer">
+            <!-- Kết quả tìm kiếm sẽ được hiển thị ở đây -->
+        </div>
+	</main>
+    
+	<!-- Footer -->
+    <footer class="footer">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h4 class="text-x1 text-center font-bold mb-1">TRƯỜNG CAO ĐẲNG NGHỀ VIỆT NAM - HÀN QUỐC CÀ MAU</h4>
+					<h5 class="font-semibold mb-1 text-center text-yellow-400">CA MAU VIETNAM - KOREA VOCATIONAL COLLEGE</h5>
+					<h5 class="font-semibold mb-2 text-center text-yellow-400">(CAMAUVKC)</h5>
+                     <div class="flex space-x-4 items-center justify-center text-center" style="margin-top:20px;">
+                        <a href="https://camauvkc.edu.vn" alt="Website" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><i class="fas fa-globe"></i></a>
+						<a href="https://facebook.com/camauvkc" alt="Fanpage" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                        <a href="https://zalo.me/camauvkc" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><img src="https://camauvkc.edu.vn/img/Icon_Zalo.svg" alt="ZaloOA"></a>
+						<a href="https://youtube.com/@camauvkc" target="_blank" class="w-8 h-8 flex items-center justify-center bg-white text-blue-600 rounded-full hover:bg-blue-100 transition duration-300"><img src="https://camauvkc.edu.vn/img/Icon_Youtube.svg" alt="Youtube"></a>
+					</div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold mb-4">LIÊN HỆ</h4>
+                    <p class="mb-2 text-sm"><i class="fas fa-map-marker-alt mr-2"></i> Số 08, đường Mậu Thân, phường An Xuyên, tỉnh Cà Mau</p>
+                    <p class="mb-2 text-sm"><i class="fas fa-phone mr-2"></i> 02903.832.835</p>
+					<p class="mb-2 text-sm"><i class="fas fa-envelope mr-2"></i> <a href="mailto:camauvkc@camauvkc.edu.vn" class="hover:underline"> camauvkc@camauvkc.edu.vn</a></p>
+                   <p class="mb-2 flex mb-2 text-sm text-yellow-300"><i class="fas fa-headset mr-2 w-4 text-center"></i><span>02903.592.101 (ĐT) - 02903.592.102 (SV)</span></p>
+                </div>
+                <!--Map trường-->
+				<div>
+					<div class="rounded-lg shadow-md overflow-hidden">
+						<iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1969.2305755919815!2d105.15840791790602!3d9.202981887153484!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x31a149d5005493c7%3A0x55fe687b8b8dceb9!2zVHLGsOG7nW5nIENhbyDEkeG6s25nIG5naOG7gSBWaeG7h3QgTmFtIC0gSMOgbiBRdeG7kWMgQ8OgIE1hdQ!5e0!3m2!1svi!2s!4v1748395297134!5m2!1svi!2s" 
+							width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" 
+							referrerpolicy="no-referrer-when-downgrade"></iframe>
+					</div>
+				</div>
+            </div>
+            <div class="border-t border-gray-700 mt-8 pt-4 py-0 text-center">
+                <p class="text-sm text-yellow-400">© 2025 - H.M.Hiếu - CamauVKC</p>
+            </div>
+        </div>
+    </footer>
+	<!-- end Footer -->   
+	    
+    <script>
+        async function searchTuition() {
+            const searchTerm = document.getElementById('searchInput').value.trim();
+            const resultContainer = document.getElementById('resultContainer');
+            const subTitleEl = document.getElementById('pageSubTitle');
+            
+            resultContainer.innerHTML = '<div class="text-center p-8"><i class="fas fa-spinner fa-spin text-4xl text-blue-500"></i><p class="mt-2">Đang tìm kiếm...</p></div>';
+            subTitleEl.textContent = '';
+
+            if (!searchTerm) {
+                resultContainer.innerHTML = '<p class="error">Vui lòng nhập thông tin tìm kiếm.</p>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`https://camauvkc.edu.vn:3000/api/public/search-tuition?searchTerm=${encodeURIComponent(searchTerm)}`);
+                const data = await response.json();
+
+                if (!response.ok || data.error) {
+                    throw new Error(data.error || `Lỗi ${response.status}: Không thể lấy dữ liệu.`);
+                }
+                
+                renderResult(data);
+
+            } catch (error) {
+                resultContainer.innerHTML = `<p class="error"><i class="fas fa-exclamation-triangle mr-2"></i>${error.message}</p>`;
+            }
+        }
+
+        function renderResult(data) {
+            const resultContainer = document.getElementById('resultContainer');
+            const subTitleEl = document.getElementById('pageSubTitle');
+            
+            subTitleEl.textContent = data.hocKy.toUpperCase();
+            
+            const formatCurrency = (num) => num.toLocaleString('vi-VN') + ' VNĐ';
+
+            // --- 4.1. Phần Thông tin cá nhân ---
+            let html = `
+                <div class="info-section">
+                    <h3 class="text-xl font-bold text-blue-700 mb-4 border-b-2 pb-2"><i class="fas fa-user-circle mr-2"></i>Thông tin cá nhân</h3>
+                    <div class="info-grid">
+                        <div class="flex justify-center md:justify-start">
+                            <img src="${data.imageUrl}" alt="Ảnh sinh viên" class="student-avatar"
+                                 onerror="this.onerror=null; this.src='${data.imageUrl.replace('.jpg', '.PNG')}'; this.onerror=null; this.src='https://camauvkc.edu.vn/img/Logo.jpg';">
+                        </div>
+                        <div>
+                            <div class="info-item"><span class="info-label">Mã số SV:</span> <span class="info-value uppercase">${data.maso}</span></div>
+                            <div class="info-item"><span class="info-label">Họ và tên:</span> <span class="info-value uppercase">${data.hoTen}</span></div>
+                            <div class="info-item"><span class="info-label">Nơi sinh:</span> <span class="info-value">${data.noiSinh || 'N/A'}</span></div>
+                            <div class="info-item"><span class="info-label">Khóa học:</span> <span class="info-value">${data.khoaHoc}</span></div>
+                            <div class="info-item"><span class="info-label">Ngành học:</span> <span class="info-value">${data.nganhHoc}</span></div>
+                            <div class="info-item"><span class="info-label">Bậc đào tạo:</span> <span class="info-value">${data.bacDaoTao}</span></div>
+                            <div class="info-item" style="border-bottom: none;"><span class="info-label">Tên lớp:</span> <span class="info-value">${data.tenLop}</span></div>
+                        </div>
+                    </div>
+                </div>`;
+
+            // --- 4.2. Phần Thông tin học phí ---
+            html += `
+                <div class="info-section">
+                    <h3 class="text-xl font-bold text-blue-700 mb-2 border-b-2 pb-2"><i class="fas fa-file-invoice-dollar mr-2"></i>Thông báo học phí: ${data.hocKy.toUpperCase()}</h3>
+                    <p class="text-md mb-2">Thông báo nộp HP: <strong>Số ${data.soThongBao}, ngày ${data.ngayThongBao}</strong></p>
+                    <p class="text-md mb-4">Hạn nộp chậm nhất: <strong class="text-red-600">${data.hanNop}</strong></p>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-center border">
+                            <thead class="bg-gray-100 text-gray-700">
+                                <tr>
+                                    <th class="border p-2">Học phí QĐ</th>
+                                    <th class="border p-2">Miễn giảm</th>
+                                    <th class="border p-2">Phải nộp</th>
+                                    <th class="border p-2">Đã nộp</th>
+                                    <th class="border p-2 bg-blue-100 text-blue-800">Còn lại</th>
+                                </tr>
+                            </thead>
+                            <tbody class="font-semibold">
+                                <tr>
+                                    <td class="border p-2">${formatCurrency(data.hocPhiQD)}</td>
+                                    <td class="border p-2">${formatCurrency(data.mienGiam)}</td>
+                                    <td class="border p-2">${formatCurrency(data.phaiNop)}</td>
+                                    <td class="border p-2 text-green-600">${formatCurrency(data.daNop)}</td>
+                                    <td class="border p-2 text-red-600">${formatCurrency(data.conLai)}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>`;
+
+            // --- 4.3. Phần Thông tin nộp học phí ---
+            html += `<div class="info-section">`;
+            if (data.isOverdue) {
+                html += `<div class="notice warning font-semibold text-center"><i class="fas fa-exclamation-triangle mr-2"></i>Đã hết thời hạn đóng học phí. Để nộp học phí, vui lòng liên hệ bộ phận Kế toán của nhà trường.</div>`;
+            } else {
+                if (data.conLai <= 0) {
+                    html += `<div class="notice success font-semibold text-center"><i class="fas fa-check-circle mr-2"></i>Sinh viên đã hoàn thành học phí!</div>`;
+                } else {
+                    const qrUrl = `https://api.vietqr.io/image/${data.bankInfo.bankId}-${data.bankInfo.accountNo}-UDfMaKR.jpg?accountName=${data.bankInfo.qrAccountName}&amount=${data.conLai}&addInfo=${data.bankInfo.qrContent}`;
+                    html += `
+                        <div class="flex flex-col md:flex-row gap-6 items-center">
+                            <div class="text-center flex-shrink-0">
+                                <img src="${qrUrl}" alt="QR Code thanh toán" class="qr-code-img mx-auto" width="250">
+                                <p class="text-sm mt-2 font-medium">Quét mã để thanh toán</p>
+                            </div>
+                            <div class="border-t md:border-t-0 md:border-l pt-4 md:pt-0 md:pl-6 w-full">
+                                <h4 class="font-bold text-lg mb-2 text-gray-800">Hướng dẫn chuyển khoản:</h4>
+                                <ul class="space-y-2 text-gray-700">
+                                    <li><strong>Tên TK:</strong> ${data.bankInfo.accountName}</li>
+                                    <li><strong>Ngân hàng:</strong> ${data.bankInfo.bankName}</li>
+                                    <li><strong>Số tài khoản:</strong> <span class="font-mono">${data.bankInfo.accountNo}</span></li>
+                                    <li><strong>Số tiền chuyển:</strong> <span class="font-bold text-red-600">${formatCurrency(data.conLai)}</span></li>
+                                    <li class="break-all"><strong>Nội dung:</strong> ${data.noiDungChuyenKhoan}</li>
+                                </ul>
+                            </div>
+                        </div>`;
+                }
+            }
+            html += `</div>`;
+
+            // --- 4.4. Phần Ghi chú ---
+            html += `
+                <div class="info-section bg-gray-50">
+                    <h3 class="text-xl font-bold text-gray-700 mb-4 border-b-2 pb-2"><i class="fas fa-info-circle mr-2"></i>Ghi chú</h3>
+                    <ul class="list-disc list-inside space-y-2 text-gray-600 text-sm">
+                        <li>Sinh viên quét mã QR hoặc chuyển khoản theo hướng dẫn trên trước ngày hết hạn.</li>
+                        <li>Trước khi chấp nhận chuyển khoản cần kiểm tra cẩn thận số tài khoản trường, số tiền và nội dung chuyển khoản.</li>
+                        <li>Khi chuyển khoản thành công, <strong>chụp lại màn hình</strong> để đối chiếu khi cần thiết.</li>
+                        <li>Trong <strong>02 ngày làm việc</strong> kể từ ngày chuyển khoản, bộ phận Kế toán của nhà trường sẽ cập nhật lên hệ thống. Sinh viên có thể kiểm tra lại tại trang này.</li>
+                        <li>Trường hợp sau 02 ngày làm việc mà trường chưa cập nhật, sinh viên vui lòng liên hệ Cố vấn học tập hoặc bộ phận Kế toán để được hỗ trợ.</li>
+                    </ul>
+                </div>`;
+
+            resultContainer.innerHTML = html;
+        }
+
+        document.getElementById('searchInput').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                searchTuition();
+            }
+        });
+    </script>
+</body>
+</html>
+
+

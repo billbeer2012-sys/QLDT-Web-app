@@ -1,0 +1,718 @@
+<!--
+* Thời gian cập nhật: 28/01/2026
+* Tóm tắt những nội dung cập nhật:
+* - Thêm Học vị cho Giảng viên.
+* - Thêm nhóm phòng sau tên phòng
+* - Địn dạng màu nền cho các ô thời khóa biểu: Lý thuyết, Thực hành, Trực tuyến
+-->
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thời Khóa Biểu - CamauVKC</title>
+
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1PPEJ5GTS9"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag() { dataLayer.push(arguments); }
+        gtag('js', new Date());
+        gtag('config', 'G-1PPEJ5GTS9');
+    </script>
+
+    <!-- Libraries -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script
+        src="https://cdnjs.cloudflare.com/ajax/libs/moment-timezone/0.5.34/moment-timezone-with-data.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        'navy': {
+                            50: '#f0f4ff', 100: '#e0e7ff', 200: '#c7d2fe', 300: '#a5b4fc',
+                            400: '#818cf8', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca',
+                            800: '#3730a3', 900: '#312e81', 950: '#1e1b4b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* (CSS styles giữ nguyên không đổi) */
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .header-fixed {
+            backdrop-filter: blur(10px);
+            background: linear-gradient(135deg, #003399 0%, #0066cc 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .logo-circle {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #fbbf24;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .footer {
+            background: linear-gradient(135deg, #003399 0%, #0066cc 100%);
+            color: white;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+
+        .content-card {
+            background: linear-gradient(135deg, white, #f8fafc);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e2e8f0;
+        }
+
+        .dark .content-card {
+            background: linear-gradient(135deg, #1f2937, #374151);
+            border-color: #4b5563;
+        }
+
+        .schedule-table {
+            border-collapse: collapse;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .schedule-table th {
+            background: linear-gradient(135deg, #1e1b4b, #312e81);
+            color: white;
+            font-weight: 600;
+            padding: 16px 12px;
+            text-align: center;
+            border: none;
+            font-size: 0.9rem;
+        }
+
+        .schedule-table td {
+            border: 1px solid #e5e7eb;
+            padding: 0;
+            text-align: center;
+            vertical-align: top;
+            background: white;
+            transition: background-color 0.2s;
+        }
+
+        .dark .schedule-table td {
+            border-color: #374151;
+            background: #1f2937;
+        }
+
+        .schedule-table .afternoon-divider td {
+            border-top: 2px solid #818cf8;
+        }
+
+        .dark .schedule-table .afternoon-divider td {
+            border-top: 2px solid #fbbf24;
+        }
+
+        .schedule-table .schedule-cell-content {
+            background: linear-gradient(135deg, white, #f8fafc);
+            border-left: 4px solid #3b82f6;
+        }
+
+        .dark .schedule-table .schedule-cell-content {
+            background: linear-gradient(135deg, #374151, #4b5563);
+            border-left-color: #60a5fa;
+        }
+
+        /* BỔ SUNG: Màu nền theo MaLP */
+        .schedule-table .schedule-cell-thuchanh {
+            background: #046cf3 !important;
+            color: black !important;
+            border-left-color: #60a5fa;
+        }
+
+        .schedule-table .schedule-cell-tructruyen {
+            background: #166534 !important;
+            color: white !important;
+            border-left-color: #22c55e;
+        }
+
+        .schedule-table td.empty-cell {
+            background-color: #fcfdff;
+        }
+
+        /* BỎ: Màu nền phân biệt buổi chiều */
+        .dark .schedule-table td.empty-cell {
+            background-color: #1f2937;
+        }
+
+        .schedule-table .session-cell {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            font-weight: 600;
+            vertical-align: middle;
+            font-size: 0.9rem;
+            padding: 12px 8px;
+        }
+
+        .session-time {
+            display: block;
+            font-size: 0.7rem;
+            font-weight: 400;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .schedule-item {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            font-size: 0.85rem;
+            padding: 8px;
+            height: 100%;
+            box-sizing: border-box;
+            min-height: 60px;
+        }
+
+        .schedule-item .info-line {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .custom-select {
+            appearance: none;
+            -webkit-appearance: none;
+            background: linear-gradient(135deg, white, #f8fafc);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 40px 12px 16px;
+            font-weight: 500;
+            transition: all 0.3s;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 12px center;
+            background-repeat: no-repeat;
+            background-size: 16px;
+        }
+
+        .custom-select:focus,
+        .custom-input:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+            outline: none;
+        }
+
+        .dark .custom-select {
+            background: linear-gradient(135deg, #374151, #4b5563);
+            border-color: #6b7280;
+            color: white;
+        }
+
+        .custom-input {
+            background: linear-gradient(135deg, white, #f8fafc);
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px 16px 12px 40px;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+
+        .dark .custom-input {
+            background: linear-gradient(135deg, #374151, #4b5563);
+            border-color: #6b7280;
+            color: white;
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e40af, #3b82f6);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .back-to-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .back-to-top:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 25px rgba(59, 130, 246, 0.4);
+        }
+
+        .dark-mode-toggle {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            transition: all 0.3s;
+        }
+
+        .dark-mode-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+
+        .dark .dark-mode-toggle {
+            background: rgba(0, 0, 0, 0.2);
+            border-color: rgba(251, 191, 36, 0.5);
+            color: #fbbf24;
+        }
+
+        @media (max-width: 768px) {
+            .logo-circle {
+                width: 50px;
+                height: 50px;
+            }
+
+            .back-to-top {
+                width: 45px;
+                height: 45px;
+                bottom: 20px;
+                right: 20px;
+            }
+
+            .schedule-table th,
+            .schedule-table td {
+                padding-left: 4px;
+                padding-right: 4px;
+                font-size: 0.8rem;
+            }
+
+            .schedule-item {
+                font-size: 0.75rem;
+                padding: 6px;
+            }
+        }
+    </style>
+
+    <script>
+        if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark')
+        } else {
+            document.documentElement.classList.remove('dark')
+        }
+    </script>
+</head>
+
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-200 min-h-screen">
+
+    <!-- Header -->
+    <header class="header-fixed sticky top-0 left-0 right-0 z-50 shadow-lg">
+        <div class="container mx-auto px-4 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <img src="https://camauvkc.edu.vn/img/Logo.jpg" alt="Logo trường" class="logo-circle">
+                    <div class="text-white">
+                        <h1 class="font-bold text-xs sm:text-sm md:text-lg leading-tight text-yellow-300">UBND TỈNH CÀ
+                            MAU</h1>
+                        <h1 class="font-bold text-sm sm:text-base md:text-xl leading-tight">TRƯỜNG CAO ĐẲNG NGHỀ VIỆT
+                            NAM - HÀN QUỐC CÀ MAU</h1>
+                    </div>
+                </div>
+
+                <button id="dark-mode-toggle" class="dark-mode-toggle" title="Chuyển đổi chế độ sáng/tối">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 md:p-8">
+        <div class="text-center my-8">
+            <div
+                class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-navy-600 rounded-full mb-4">
+                <i class="fas fa-calendar-week text-white text-2xl"></i>
+            </div>
+            <h1
+                class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-navy-600 to-blue-500 bg-clip-text text-transparent mb-2">
+                THỜI KHÓA BIỂU
+            </h1>
+            <p class="text-gray-600 dark:text-gray-400 text-lg">Tra cứu lịch đào tạo theo Lớp Học</p>
+        </div>
+
+        <div class="content-card p-6 md:p-8 mb-8">
+            <div class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="space-y-2">
+                        <label for="hocky-select"
+                            class="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-book text-blue-500"></i>Học kỳ:
+                        </label>
+                        <select id="hocky-select" class="custom-select w-full"></select>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="tuan-select"
+                            class="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300">
+                            <i class="fas fa-calendar-alt text-blue-500"></i>Tuần:
+                        </label>
+                        <select id="tuan-select" class="custom-select w-full"></select>
+                    </div>
+                </div>
+
+                <!-- BỔ SUNG: Control tìm kiếm -->
+                <div class="space-y-2">
+                    <label for="search-input"
+                        class="flex items-center gap-2 font-semibold text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-search text-blue-500"></i>Tìm kiếm:
+                    </label>
+                    <div class="relative">
+                        <input type="search" id="search-input" class="custom-input w-full"
+                            placeholder="Nhập tên GV, tên học phần, phòng học...">
+                        <i class="fas fa-search text-gray-400 absolute left-4 top-1/2 -translate-y-1/2"></i>
+                    </div>
+                </div>
+
+                <!-- BỔ SUNG: Chú thích màu sắc -->
+                <div class="flex flex-wrap items-center gap-4 mt-4 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-sm">
+                    <span class="font-medium text-gray-600 dark:text-gray-300"><i
+                            class="fas fa-info-circle mr-1"></i>Ghi chú:</span>
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded bg-white border border-gray-300"></span>
+                        <span>Lý thuyết</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded" style="background:#046cf3"></span>
+                        <span>Thực hành</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="w-4 h-4 rounded bg-green-700"></span>
+                        <span>Trực tuyến</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="schedule-container" class="space-y-8"></div>
+
+        <div id="loader" class="text-center py-16 hidden">
+            <div
+                class="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-blue-500 to-navy-600 rounded-full mb-4 animate-pulse">
+                <i class="fas fa-spinner fa-spin text-white text-2xl"></i>
+            </div>
+            <p class="text-xl font-medium text-gray-600 dark:text-gray-400">Đang tải dữ liệu...</p>
+            <p class="text-sm text-gray-500 dark:text-gray-500 mt-2">Vui lòng chờ trong giây lát</p>
+        </div>
+
+        <div id="no-data" class="text-center py-16 hidden">
+            <div
+                class="inline-flex items-center justify-center w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded-full mb-4">
+                <i class="fas fa-calendar-times text-gray-400 text-2xl"></i>
+            </div>
+            <p class="text-xl font-medium text-gray-500 dark:text-gray-400">Không có dữ liệu thời khóa biểu</p>
+            <p class="text-sm text-gray-400 dark:text-gray-500 mt-2">Vui lòng chọn hoặc tìm kiếm thông tin khác</p>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <!-- (Nội dung footer không đổi) -->
+    </footer>
+
+    <!-- Back to Top Button -->
+    <button id="back-to-top" class="back-to-top" title="Về đầu trang"><i class="fas fa-chevron-up"></i></button>
+
+    <script>
+
+        const API_BASE_URL = 'https://camauvkc.edu.vn:3000/api/public';
+
+        const hockySelect = document.getElementById('hocky-select');
+        const tuanSelect = document.getElementById('tuan-select');
+        const searchInput = document.getElementById('search-input'); // BỔ SUNG
+        const scheduleContainer = document.getElementById('schedule-container');
+        const loader = document.getElementById('loader');
+        const noDataMessage = document.getElementById('no-data');
+        const backToTopBtn = document.getElementById('back-to-top');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+
+        // BỎ: biến currentViewMode
+        // let currentViewMode = 'lop';
+
+        // BỔ SUNG: Hàm debounce
+        function debounce(func, delay) {
+            let timeout;
+            return function (...args) {
+                const context = this;
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(context, args), delay);
+            };
+        }
+
+        const showLoader = (show) => loader.classList.toggle('hidden', !show);
+        const showNoDataMessage = (show) => noDataMessage.classList.toggle('hidden', !show);
+
+        async function fetchHocKy() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/hocky`);
+                if (!response.ok) throw new Error('Network error');
+                const { semesters, defaultSemester } = await response.json();
+                hockySelect.innerHTML = semesters.map(hk => `<option value="${hk.MaHK}">${hk.Hocky}</option>`).join('');
+                if (defaultSemester) {
+                    hockySelect.value = defaultSemester;
+                }
+                await fetchTuan();
+            } catch (error) {
+                console.error('Error fetching semesters:', error);
+                scheduleContainer.innerHTML = `<div class="content-card p-8 text-center"><div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full mb-4"><i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i></div><p class="text-red-500 text-lg font-medium">Không thể kết nối đến máy chủ</p><p class="text-gray-500 mt-2">Vui lòng kiểm tra lại kết nối mạng và thử lại.</p></div>`;
+            }
+        }
+
+        async function fetchTuan() {
+            const selectedHocKy = hockySelect.value;
+            if (!selectedHocKy) return;
+            try {
+                const response = await fetch(`${API_BASE_URL}/tuan?mahk=${selectedHocKy}`);
+                if (!response.ok) throw new Error('Network error');
+                const tuanList = await response.json();
+                if (tuanList.length === 0) {
+                    tuanSelect.innerHTML = `<option value="">Không có dữ liệu</option>`;
+                    scheduleContainer.innerHTML = '';
+                    showNoDataMessage(true);
+                    return;
+                }
+                tuanSelect.innerHTML = tuanList.map(t => `<option value="${t.value}">${t.label}</option>`).join('');
+                const now = moment().tz('Asia/Ho_Chi_Minh');
+                const defaultTuan = tuanList.find(t => {
+                    const [start, end] = t.value.split('_');
+                    return now.isBetween(moment(start), moment(end), 'day', '[]');
+                });
+                if (defaultTuan) tuanSelect.value = defaultTuan.value;
+                await fetchSchedule();
+            } catch (error) {
+                console.error('Error fetching weeks:', error);
+            }
+        }
+
+        // CẬP NHẬT: Hàm fetchSchedule
+        async function fetchSchedule() {
+            const selectedTuan = tuanSelect.value;
+            const searchTerm = searchInput.value; // BỔ SUNG
+
+            if (!selectedTuan) {
+                scheduleContainer.innerHTML = '';
+                showNoDataMessage(true);
+                return;
+            }
+
+            const [startDate, endDate] = selectedTuan.split('_');
+            showLoader(true);
+            scheduleContainer.innerHTML = '';
+            showNoDataMessage(false);
+
+            try {
+                // CẬP NHẬT: Thêm searchTerm vào URL và bỏ groupBy
+                const url = new URL(`${API_BASE_URL}/tkb`);
+                url.searchParams.append('startDate', startDate);
+                url.searchParams.append('endDate', endDate);
+                if (searchTerm) {
+                    url.searchParams.append('searchTerm', searchTerm);
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Network error');
+                const data = await response.json();
+
+                if (data.length === 0) {
+                    showNoDataMessage(true);
+                } else {
+                    renderSchedule(data, startDate);
+                }
+            } catch (error) {
+                console.error('Error fetching schedule:', error);
+                scheduleContainer.innerHTML = `<div class="content-card p-8 text-center"><div class="inline-flex items-center justify-center w-16 h-16 bg-red-100 dark:bg-red-900 rounded-full mb-4"><i class="fas fa-wifi-slash text-red-500 text-2xl"></i></div><p class="text-red-500 text-lg font-medium">Lỗi tải dữ liệu</p><p class="text-gray-500 mt-2">Vui lòng thử lại.</p></div>`;
+            } finally {
+                showLoader(false);
+            }
+        }
+
+        // CẬP NHẬT: Hàm renderSchedule
+        function renderSchedule(data, weekStartDate) {
+            scheduleContainer.innerHTML = '';
+            // Dữ liệu giờ là một mảng các lớp, không cần lặp qua 'donvi'
+            data.forEach(group => {
+                const tableHtml = createScheduleTable(group, weekStartDate);
+                const groupSection = document.createElement('div');
+                groupSection.className = 'content-card p-4 sm:p-6 md:p-8';
+                groupSection.innerHTML = `
+                    <div class="mb-8 last:mb-0">
+                        <div class="flex items-center gap-3 mb-4">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-navy-600 rounded-lg flex items-center justify-center shrink-0">
+                                <i class="fas fa-users text-white text-base"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xs text-blue-600 dark:text-blue-400">Lớp học phần</h3>
+                                <p class="text-lg font-semibold text-gray-700 dark:text-gray-300">${group.name}</p>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto rounded-lg">${tableHtml}</div>
+                    </div>`;
+                scheduleContainer.appendChild(groupSection);
+            });
+        }
+
+        // CẬP NHẬT: Hàm createScheduleTable
+        function createScheduleTable(group, weekStartDate) {
+            const grid = Array(12).fill(null).map(() => Array(7).fill(null));
+            group.schedule.forEach(item => {
+                const dayIndex = moment(item.Ngay).isoWeekday() - 1;
+                const tietIndex = item.Tiet - 1;
+                if (tietIndex >= 0 && tietIndex < 12 && dayIndex >= 0 && dayIndex < 7) {
+                    let cumulativeHtml = '';
+                    if (item.Tongsotiet && item.Tongsotiet > 0) {
+                        const isOver = item.SoTietTichLuy >= item.Tongsotiet;
+                        const bgColorClass = isOver ? 'bg-yellow-200 dark:bg-yellow-800/50' : '';
+                        const textColorClass = isOver ? '' : 'text-yellow-400 dark:text-amber-400';
+                        cumulativeHtml = `
+                            <div class="mt-2 flex items-center justify-start gap-1 p-1 rounded ${bgColorClass} ${textColorClass} text-xs font-normal">
+                                <i class="fas fa-calculator text-xs"></i>
+                                <span>${item.SoTietTichLuy}/${item.Tongsotiet}</span>
+                            </div>`;
+                    }
+                    // BỔ SUNG: Hiển thị Nhomphong bên cạnh Tenphong
+                    const roomDisplay = item.Nhomphong
+                        ? `${item.Tenphong} (${item.Nhomphong})`
+                        : item.Tenphong;
+
+                    // BỔ SUNG: Xác định class màu nền theo MaLP
+                    let cellClass = 'schedule-cell-content';
+                    let textColorClass = '';
+                    if (item.MaLP === '002') {
+                        cellClass = 'schedule-cell-content schedule-cell-thuchanh';
+                        textColorClass = 'text-white';
+                    } else if (item.MaLP === '003') {
+                        cellClass = 'schedule-cell-content schedule-cell-tructruyen';
+                        textColorClass = 'text-white';
+                    }
+
+                    // Cập nhật: Sử dụng roomDisplay thay vì Tenphong
+                    const contextualInfo = `<span class="info-line ${textColorClass || 'text-blue-600 dark:text-blue-400'} font-medium"><i class="fas fa-user-tie fa-fw mr-1.5"></i>${item.HoTenGV}</span><span class="info-line ${textColorClass || 'text-red-600 dark:text-red-400'} font-medium"><i class="fas fa-map-marker-alt fa-fw mr-1.5"></i>${roomDisplay}</span>`;
+
+                    const formattedItem = `
+                        <div class="schedule-item text-left">
+                            <div class="flex items-start justify-between">
+                                <strong class="info-line font-semibold ${textColorClass || 'text-gray-900 dark:text-white'}">${item.TenHP}</strong>
+                                <span class="text-xs ${textColorClass || 'text-gray-500 dark:text-gray-400'} ml-2 shrink-0">(${item.Sotiet} giờ)</span>
+                            </div>
+                            ${item.Ghichu ? `<span class="info-line text-xs ${textColorClass || 'text-amber-600 dark:text-amber-400'}"><i class="fas fa-info-circle fa-fw mr-1.5"></i>${item.Ghichu}</span>` : ''}
+                            <div class="mt-1 space-y-1">${contextualInfo}</div>
+                            ${cumulativeHtml}
+                        </div>`;
+                    grid[tietIndex][dayIndex] = { html: formattedItem, rowspan: item.Sotiet, cellClass: cellClass };
+                    for (let i = 1; i < item.Sotiet; i++) { if (tietIndex + i < 12) grid[tietIndex + i][dayIndex] = 'occupied'; }
+                }
+            });
+            let headerHtml = `<thead><tr><th class="w-16">Buổi</th><th class="w-12">Giờ</th>`;
+            const daysOfWeek = ['Thứ 2', 'Thứ 3', 'Thứ 4', 'Thứ 5', 'Thứ 6', 'Thứ 7', 'Chủ nhật'];
+            for (let i = 0; i < 7; i++) {
+                const date = moment(weekStartDate).add(i, 'days');
+                headerHtml += `<th><div class="flex flex-col items-center"><span class="font-semibold">${daysOfWeek[i]}</span><span class="text-sm font-normal text-yellow-300">${date.format('DD/MM')}</span></div></th>`;
+            }
+            headerHtml += `</tr></thead>`;
+            let bodyHtml = '<tbody>';
+            for (let i = 0; i < 12; i++) {
+                // BỎ: afternoon-row class để loại bỏ màu nền phân biệt buổi chiều
+                const dividerClass = i === 6 ? 'afternoon-divider' : '';
+                bodyHtml += `<tr class="${dividerClass}">`;
+
+                if (i === 0) bodyHtml += `<td rowspan="6" class="session-cell"><i class="fas fa-sun mr-2"></i>Sáng<span class="session-time"><i class="fas fa-clock mr-1"></i>07h00</span></td>`;
+                if (i === 6) bodyHtml += `<td rowspan="6" class="session-cell"><i class="fas fa-cloud-sun mr-2"></i>Chiều<span class="session-time"><i class="fas fa-clock mr-1"></i>13h00</span></td>`;
+
+                const isAfternoon = i >= 6;
+                const hourNumber = isAfternoon ? (i - 6 + 1) : (i + 1);
+                bodyHtml += `<td class="font-normal text-gray-600 dark:text-gray-400 p-2">${hourNumber}</td>`;
+
+                for (let j = 0; j < 7; j++) {
+                    const cell = grid[i][j];
+                    // BỔ SUNG: Sử dụng cellClass tùy thuộc MaLP
+                    if (cell && cell !== 'occupied') {
+                        const cellClasses = cell.cellClass || 'schedule-cell-content';
+                        bodyHtml += `<td rowspan=${cell.rowspan} class="p-1 ${cellClasses}">${cell.html}</td>`;
+                    }
+                    else if (!cell) bodyHtml += `<td class="empty-cell"></td>`;
+                }
+                bodyHtml += '</tr>';
+            }
+            bodyHtml += '</tbody>';
+            return `<table class="w-full min-w-[800px] schedule-table">${headerHtml}${bodyHtml}</table>`;
+        }
+
+        function setupUIListeners() {
+            window.addEventListener('scroll', () => {
+                backToTopBtn.classList.toggle('show', window.pageYOffset > 300);
+            });
+            backToTopBtn.addEventListener('click', () => {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+
+            const darkModeIcon = darkModeToggle.querySelector('i');
+            function updateDarkModeButton() {
+                const isDark = document.documentElement.classList.contains('dark');
+                darkModeIcon.className = isDark ? 'fas fa-sun' : 'fas fa-moon';
+                darkModeToggle.title = isDark ? 'Chuyển sang chế độ sáng' : 'Chuyển sang chế độ tối';
+            }
+            darkModeToggle.addEventListener('click', () => {
+                const isDark = document.documentElement.classList.toggle('dark');
+                localStorage.theme = isDark ? 'dark' : 'light';
+                updateDarkModeButton();
+            });
+            updateDarkModeButton();
+        }
+
+        hockySelect.addEventListener('change', fetchTuan);
+        tuanSelect.addEventListener('change', fetchSchedule);
+
+        // BỔ SUNG: Event listener cho ô tìm kiếm với debounce
+        const debouncedFetch = debounce(fetchSchedule, 400);
+        searchInput.addEventListener('input', debouncedFetch);
+
+        // BỎ: event listener của radio buttons
+        // viewModeRadios.forEach(...);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            showLoader(true);
+            setupUIListeners();
+            fetchHocKy();
+        });
+    </script>
+</body>
+
+</html>

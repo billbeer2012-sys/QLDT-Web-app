@@ -1,10 +1,10 @@
 ﻿/*
  * D:\QLDT-app\client\src\store\tabStore.jsx
- * Phiên bản cập nhật: 15/11/2025
+ * Phiên bản cập nhật: 05/02/2026
  * Tóm tắt những nội dung cập nhật:
- * Bổ sung "Nhập điểm thi"
+ * Bổ sung "Tạo phòng thi"
  */
- 
+
 import React from 'react';
 import { create } from 'zustand';
 
@@ -45,6 +45,10 @@ import DanhMucLopHocPage from '../pages/DanhMucLopHocPage.jsx';
 import LichGiangDayPage from '../pages/LichGiangDayPage.jsx';
 // Import trang "Nhập điểm thi"
 import NhapDiemThiPage from '../pages/NhapDiemThiPage.jsx';
+// Import trang "Tạo phòng thi"
+import ExamRoomBuilderPage from '../pages/ExamRoomBuilderPage.jsx';
+// Import trang "Xếp lịch thi" (module Quản lý phòng thi)
+import ExamRoomSchedulePage from '../features/exam-room-management/ExamRoomSchedulePage.jsx';
 
 const componentMap = {
     'HomePage': HomePage,
@@ -57,32 +61,36 @@ const componentMap = {
     'ExamSchedulePage': ExamSchedulePage,
     // Thêm trang "Thống kê Tuyển sinh" vào map
     'AdmissionStatsPage': AdmissionStatsPage,
-	// Thêm trang "Thống kê Người học" vào map
+    // Thêm trang "Thống kê Người học" vào map
     'StudentStatsPage': StudentStatsPage,
-	// Thêm trang Dashboard vào map
+    // Thêm trang Dashboard vào map
     'DashboardPage': DashboardPage,
-	// Thêm trang "Thống kê Tốt nghiệp" vào map
+    // Thêm trang "Thống kê Tốt nghiệp" vào map
     'GraduationStatsPage': GraduationStatsPage,
-	// Thêm trang "Tổng hợp khoản thu" vào map
+    // Thêm trang "Tổng hợp khoản thu" vào map
     'FeeSummaryPage': FeeSummaryPage,
-	// Thêm trang "Quản lý Lớp học phần" vào map
+    // Thêm trang "Quản lý Lớp học phần" vào map
     'CreditClassManagementPage': CreditClassManagementPage,
-	// Đăng ký component "Cập nhật việc làm"
+    // Đăng ký component "Cập nhật việc làm"
     'UpdateWorkInfoPage': UpdateWorkInfoPage,
-	//Đăng ký component "Cập nhập thông tin nười dừng"
+    //Đăng ký component "Cập nhập thông tin nười dừng"
     'UpdateProfilePage': UpdateProfilePage,
-	// Đăng ký component "Khoản thu lớp SH"
+    // Đăng ký component "Khoản thu lớp SH"
     'ClassFeeManagementPage': ClassFeeManagementPage,
-	// Đăng ký component "Thông báo học phí"
-	'FeeNotificationSetupPage': FeeNotificationSetupPage,
-	// Đăng ký component "DM đợt XT"
-	'QuanLyDotXetTuyenPage': QuanLyDotXetTuyenPage,
-	// Đăng ký component "DM Lớp"
+    // Đăng ký component "Thông báo học phí"
+    'FeeNotificationSetupPage': FeeNotificationSetupPage,
+    // Đăng ký component "DM đợt XT"
+    'QuanLyDotXetTuyenPage': QuanLyDotXetTuyenPage,
+    // Đăng ký component "DM Lớp"
     'DanhMucLopHocPage': DanhMucLopHocPage,
-	// Đăng ký component "Lịch giảng dạy"
+    // Đăng ký component "Lịch giảng dạy"
     'LichGiangDayPage': LichGiangDayPage,
-	// Đăng ký component "Nhập điểm thi"
+    // Đăng ký component "Nhập điểm thi"
     'NhapDiemThiPage': NhapDiemThiPage,
+    // Đăng ký component "Tạo phòng thi"
+    'ExamRoomBuilderPage': ExamRoomBuilderPage,
+    // Đăng ký component "Xếp lịch thi" (module Quản lý phòng thi)
+    'ExamRoomSchedulePage': ExamRoomSchedulePage,
 };
 
 const createTab = (id, title, componentName, props = {}) => ({

@@ -1,13 +1,11 @@
 /*
  * Đường dẫn file: D:\QLDT-app\server\routes\lich-giang-day.js
- * Thời gian cập nhật: 27/10/2025
+ * Thời gian cập nhật: 28/01/2026
  * Tóm tắt những nội dung cập nhật:
- * - SỬA LỖI (Tính lũy kế 'Đã dạy'):
- * 1. Thay đổi hoàn toàn logic SQL.
- * 2. Sử dụng Window Function 'SUM... OVER...' trong CTE 'TeachingData'.
- * 3. 'daDayCumulative' (lũy kế) được tính trên *toàn bộ* TKB (đã lọc HieuLuc = 1),
- * *trước khi* áp dụng bộ lọc 'NgayDay' (Từ ngày - Đến ngày).
- * 4. Đảm bảo giá trị lũy kế luôn chính xác, bất kể bộ lọc ngày.
+ * - KẾT HỢP: Lịch giảng dạy + Lịch coi thi
+ * - Thay đổi Hocphan.Viettat thành Hocphan.Hocphan
+ * - Thêm trường isExam để phân biệt dữ liệu lịch thi
+ * - Lịch thi: Tách thành 2 dòng cho CBCoiThi1 và CBCoiThi2
  */
 
 const express = require('express');
@@ -17,7 +15,6 @@ const moment = require('moment-timezone');
 module.exports = (poolPromise) => {
     const router = express.Router();
 
-    // (sortableColumns giữ nguyên, 'DaDay' không thể sắp xếp)
     const sortableColumns = {
         NgayDay: 'NgayDay',
         Buoi: 'Buoi',
@@ -31,7 +28,7 @@ module.exports = (poolPromise) => {
     };
 
     /**
-     * API GET Lịch giảng dạy giảng viên
+     * API GET Lịch giảng dạy + coi thi
      * [GET] /
      */
     router.get('/', async (req, res) => {
@@ -45,29 +42,12 @@ module.exports = (poolPromise) => {
 
         const today = moment().tz('Asia/Ho_Chi_Minh').format('YYYY-MM-DD');
         const tuNgay = clientTuNgay || today;
-        const denNgay = clientDenNgay || today;
+        // Mặc định denNgay = tuNgay + 3 ngày nếu không được truyền
+        const denNgay = clientDenNgay || moment(tuNgay).add(3, 'days').format('YYYY-MM-DD');
 
-        // (Logic sắp xếp giữ nguyên)
         const primarySortColumn = sortableColumns[sortBy] || 'NgayDay';
         const primarySortOrder = sortDirection.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
-        
-        const primarySort = `${primarySortColumn} ${primarySortOrder}`;
 
-        const secondarySortList = [
-            'NgayDay ASC',
-            'SortTiet ASC',
-            'SortTen ASC',
-            'SortHolot ASC',
-            'TenLopHP ASC'
-        ];
-
-        const filteredSecondarySort = secondarySortList.filter(sortKey => {
-            const sortColumnName = sortKey.split(' ')[0];
-            return sortColumnName !== primarySortColumn;
-        });
-
-        const orderByClause = [primarySort, ...filteredSecondarySort].join(', ');
-        
         try {
             const pool = await poolPromise;
             const request = pool.request();
@@ -76,11 +56,8 @@ module.exports = (poolPromise) => {
             request.input('denNgay', sql.Date, denNgay);
             request.input('searchTerm', sql.NVarChar, `%${searchTerm}%`);
 
-            // SỬA LỖI: Cập nhật câu lệnh SQL
-            const query = `
-                /* * CTE 'TeachingData' sẽ tính toán *toàn bộ* dữ liệu
-                 * và giá trị lũy kế (daDayCumulative) *trước khi* lọc.
-                 */
+            // Query 1: Lịch giảng dạy (TKB)
+            const teachingQuery = `
                 WITH TeachingData AS (
                     SELECT
                         TKB.Ngay AS NgayDay,
@@ -91,87 +68,161 @@ module.exports = (poolPromise) => {
                         END AS Buoi,
                         (Giaovien.Holot + ' ' + Giaovien.Ten) AS GiangVien,
                         LopHP.Tenlop AS TenLopHP,
-                        Hocphan.Viettat AS TenHocPhan,
+                        Hocphan.Hocphan AS TenHocPhan,
                         TKB.Sotiet AS SoGio,
-                        Phonghoc.Tenphong AS PhongHoc,
+                        ISNULL(Nhomphong.Nhomphong + N': ', N'') + Phonghoc.Tenphong AS PhongHoc,
                         TKB.Ghichu AS GhiChu,
                         Donvi.Donvi AS DonVi,
                         LopHP.Tongsotiet AS TongSoTietHP,
                         TKB.MaLHP,
-
-                        /* * SỬA LỖI: Tính lũy kế bằng Window Function
-                         * Tính tổng Sotiet, phân nhóm theo MaLHP, sắp xếp theo Ngay và Tiet.
-                         * ROWS UNBOUNDED PRECEDING đảm bảo nó tính từ dòng đầu tiên.
-                         */
+                        0 AS isExam,
                         SUM(ISNULL(TKB.Sotiet, 0)) OVER (
                             PARTITION BY TKB.MaLHP 
                             ORDER BY TKB.Ngay, TKB.Tiet
                             ROWS UNBOUNDED PRECEDING
                         ) AS daDayCumulative,
-
-                        -- Alias các cột dùng để sort phụ
                         TKB.Tiet AS SortTiet,
                         Giaovien.Ten AS SortTen,
                         Giaovien.Holot AS SortHolot
-                    FROM
-                        TKB
-                    LEFT JOIN
-                        Giaovien ON TKB.MaGV = Giaovien.MaGV
-                    LEFT JOIN
-                        Donvi ON Giaovien.MaDV = Donvi.MaDV
-                    LEFT JOIN
-                        Phonghoc ON TKB.MaPH = Phonghoc.MaPH
-                    LEFT JOIN
-                        LopHP ON TKB.MaLHP = LopHP.MaLHP
-                    LEFT JOIN
-                        Hocphan ON LopHP.MaHP = Hocphan.MaHP
-                    WHERE 
-                        TKB.HieuLuc = 1 -- Tính lũy kế chỉ dựa trên các tiết có hiệu lực
+                    FROM TKB
+                    LEFT JOIN Giaovien ON TKB.MaGV = Giaovien.MaGV
+                    LEFT JOIN Donvi ON Giaovien.MaDV = Donvi.MaDV
+                    LEFT JOIN Phonghoc ON TKB.MaPH = Phonghoc.MaPH
+                    LEFT JOIN Nhomphong ON Phonghoc.MaNP = Nhomphong.MaNP
+                    LEFT JOIN LopHP ON TKB.MaLHP = LopHP.MaLHP
+                    LEFT JOIN Hocphan ON LopHP.MaHP = Hocphan.MaHP
+                    WHERE TKB.HieuLuc = 1
                 )
-                /* * Lọc (Tìm kiếm và Ngày) ở bước NGOÀI CÙNG
-                 * sau khi giá trị 'daDayCumulative' đã được tính
-                 */
-                SELECT
-                    NgayDay,
-                    Buoi,
-                    GiangVien,
-                    TenLopHP,
-                    TenHocPhan,
-                    SoGio,
-                    PhongHoc,
-                    GhiChu,
-                    DonVi,
-                    TongSoTietHP,
-                    MaLHP,
-                    daDayCumulative, -- Lấy giá trị lũy kế đã tính
-
-                    -- Các cột sort-phụ (DB cần để ORDER BY)
-                    SortTiet,
-                    SortTen,
-                    SortHolot
-                FROM
-                    TeachingData
-                WHERE
-                    /* Lọc ngày dạy ở đây */
-                    NgayDay BETWEEN @tuNgay AND @denNgay
-                    AND
-                    /* Lọc tìm kiếm ở đây */
-                    (
-                        GiangVien LIKE @searchTerm
-                        OR TenLopHP LIKE @searchTerm
-                        OR TenHocPhan LIKE @searchTerm
-                        OR PhongHoc LIKE @searchTerm
-                        OR GhiChu LIKE @searchTerm
-                        OR DonVi LIKE @searchTerm
-                    )
-                ORDER BY
-                    ${orderByClause}
+                SELECT * FROM TeachingData
+                WHERE NgayDay BETWEEN @tuNgay AND @denNgay
+                AND (
+                    GiangVien LIKE @searchTerm
+                    OR TenLopHP LIKE @searchTerm
+                    OR TenHocPhan LIKE @searchTerm
+                    OR PhongHoc LIKE @searchTerm
+                    OR GhiChu LIKE @searchTerm
+                    OR DonVi LIKE @searchTerm
+                )
             `;
 
-            const result = await request.query(query);
-            res.status(200).json(result.recordset);
+            // Query 2: Lịch coi thi (Phongthi0, Phongthi1, Phongthi2)
+            // Sẽ trả về 2 dòng cho mỗi phòng thi (1 cho CBCoiThi1, 1 cho CBCoiThi2)
+            const examQuery = `
+                WITH PhongthiAll AS (
+                    -- Phongthi0 (Giữa kỳ)
+                    SELECT 
+                        pt0.MaPT0 AS MaPTX, 
+                        'Gk' AS Lanthi,
+                        pt0.Ngay, pt0.Gio, pt0.Phut, pt0.Thoigian,
+                        pt0.MaGV1, pt0.MaGV2, pt0.MaPH,
+                        pt0.Ghichu, pt0.Phongthi,
+                        SUBSTRING(pt0.MaPT0, 4, 4) AS MaHP,
+                        (SELECT COUNT(*) FROM SinhvienLopHP slhp WHERE slhp.MaPT0 = pt0.MaPT0) as SLSV
+                    FROM Phongthi0 pt0
+                    UNION ALL
+                    -- Phongthi1 (Lần 1)
+                    SELECT 
+                        pt1.MaPT1 AS MaPTX, 
+                        'L1' AS Lanthi,
+                        pt1.Ngay, pt1.Gio, pt1.Phut, pt1.Thoigian,
+                        pt1.MaGV1, pt1.MaGV2, pt1.MaPH,
+                        pt1.Ghichu, pt1.Phongthi,
+                        SUBSTRING(pt1.MaPT1, 4, 4) AS MaHP,
+                        (SELECT COUNT(*) FROM SinhvienLopHP slhp WHERE slhp.MaPT1 = pt1.MaPT1) as SLSV
+                    FROM Phongthi1 pt1
+                    UNION ALL
+                    -- Phongthi2 (Lần 2)
+                    SELECT 
+                        pt2.MaPT2 AS MaPTX, 
+                        'L2' AS Lanthi,
+                        pt2.Ngay, pt2.Gio, pt2.Phut, pt2.Thoigian,
+                        pt2.MaGV1, pt2.MaGV2, pt2.MaPH,
+                        pt2.Ghichu, pt2.Phongthi,
+                        SUBSTRING(pt2.MaPT2, 4, 4) AS MaHP,
+                        (SELECT COUNT(*) FROM SinhvienLopHP slhp WHERE slhp.MaPT2 = pt2.MaPT2) as SLSV
+                    FROM Phongthi2 pt2
+                )
+                -- Tách thành 2 dòng: 1 cho CBCoiThi1, 1 cho CBCoiThi2
+                SELECT 
+                    pta.Ngay AS NgayDay,
+                    CASE WHEN pta.Gio < 12 THEN N'Sáng' ELSE N'Chiều' END AS Buoi,
+                    (gv.Holot + ' ' + gv.Ten) AS GiangVien,
+                    pta.Phongthi AS TenLopHP,
+                    hp.Hocphan AS TenHocPhan,
+                    ROUND(CAST(pta.Thoigian AS FLOAT) / 45, 0) AS SoGio,
+                    ISNULL(np.Nhomphong + N': ', N'') + ph.Tenphong AS PhongHoc,
+                    N'CBCT ' + CAST(cb.CBNum AS NVARCHAR) + N' - Giờ thi: ' + 
+                        RIGHT('0' + CAST(pta.Gio AS VARCHAR), 2) + ':' + RIGHT('0' + CAST(pta.Phut AS VARCHAR), 2) + 
+                        N' (' + CAST(pta.Thoigian AS NVARCHAR) + N'p) - Lần thi: ' + pta.Lanthi + 
+                        N' - SL: ' + CAST(pta.SLSV AS NVARCHAR) + N'sv' AS GhiChu,
+                    dv.Donvi AS DonVi,
+                    NULL AS TongSoTietHP,
+                    NULL AS MaLHP,
+                    1 AS isExam,
+                    NULL AS daDayCumulative,
+                    CASE WHEN pta.Gio < 12 THEN 1 ELSE 7 END AS SortTiet,
+                    gv.Ten AS SortTen,
+                    gv.Holot AS SortHolot
+                FROM PhongthiAll pta
+                CROSS APPLY (
+                    SELECT 1 AS CBNum, pta.MaGV1 AS MaGV WHERE pta.MaGV1 IS NOT NULL
+                    UNION ALL
+                    SELECT 2 AS CBNum, pta.MaGV2 AS MaGV WHERE pta.MaGV2 IS NOT NULL
+                ) cb
+                LEFT JOIN Giaovien gv ON cb.MaGV = gv.MaGV
+                LEFT JOIN Donvi dv ON gv.MaDV = dv.MaDV
+                LEFT JOIN Hocphan hp ON pta.MaHP = hp.MaHP
+                LEFT JOIN Phonghoc ph ON pta.MaPH = ph.MaPH
+                LEFT JOIN Nhomphong np ON ph.MaNP = np.MaNP
+                WHERE pta.Ngay BETWEEN @tuNgay AND @denNgay
+                AND (
+                    (gv.Holot + ' ' + gv.Ten) LIKE @searchTerm
+                    OR pta.Phongthi LIKE @searchTerm
+                    OR hp.Hocphan LIKE @searchTerm
+                    OR ph.Tenphong LIKE @searchTerm
+                    OR dv.Donvi LIKE @searchTerm
+                )
+            `;
+
+            // Execute both queries
+            const [teachingResult, examResult] = await Promise.all([
+                request.query(teachingQuery),
+                pool.request()
+                    .input('tuNgay', sql.Date, tuNgay)
+                    .input('denNgay', sql.Date, denNgay)
+                    .input('searchTerm', sql.NVarChar, `%${searchTerm}%`)
+                    .query(examQuery)
+            ]);
+
+            // Combine results
+            let combinedData = [
+                ...teachingResult.recordset,
+                ...examResult.recordset
+            ];
+
+            // Sort: NgayDay ASC, Buoi DESC (Sáng > Chiều), GiangVien ASC
+            combinedData.sort((a, b) => {
+                // Primary sort: NgayDay
+                const dateA = new Date(a.NgayDay);
+                const dateB = new Date(b.NgayDay);
+                if (dateA < dateB) return primarySortOrder === 'ASC' ? -1 : 1;
+                if (dateA > dateB) return primarySortOrder === 'ASC' ? 1 : -1;
+
+                // Secondary sort: Buoi (Sáng first, then Chiều)
+                const buoiOrder = { 'Sáng': 1, 'Chiều': 2, 'Tối': 3 };
+                const buoiA = buoiOrder[a.Buoi] || 4;
+                const buoiB = buoiOrder[b.Buoi] || 4;
+                if (buoiA !== buoiB) return buoiA - buoiB;
+
+                // Tertiary sort: GiangVien ASC
+                const gvA = (a.GiangVien || '').toLowerCase();
+                const gvB = (b.GiangVien || '').toLowerCase();
+                return gvA.localeCompare(gvB, 'vi');
+            });
+
+            res.status(200).json(combinedData);
         } catch (error) {
-            console.error('Lỗi khi lấy lịch giảng dạy:', error);
+            console.error('Lỗi khi lấy lịch giảng dạy + coi thi:', error);
             res.status(500).json({
                 message: 'Lỗi máy chủ nội bộ khi truy vấn dữ liệu.',
                 error: error.message,
@@ -181,4 +232,3 @@ module.exports = (poolPromise) => {
 
     return router;
 };
-

@@ -1,8 +1,10 @@
 /*
 * Đường dẫn file: D:\QLDT-app\server\routes\public.js
-* Thời gian cập nhật: 13/09/2025
-
-
+* Thời gian cập nhật: 28/01/2026
+* Tóm tắt những nội dung cập nhật: xem TKB
+* - Thêm Học vị cho Giảng viên.
+* - Thêm nhóm phòng sau tên phòng
+* - Địn dạng màu nền cho các ô thời khóa biểu: Lý thuyết, Thực hành, Trực tuyến
 */
 const express = require('express');
 const sql = require('mssql');
@@ -15,29 +17,29 @@ function removeDiacritics(str) {
 
 // --- Hàm hỗ trợ cho TKB ---
 function calculateWeeks(startDate, endDate) {
-   const weeks = [];
-   let current = moment(startDate).tz('Asia/Ho_Chi_Minh').startOf('isoWeek');
-   let weekNumber = 1;
+    const weeks = [];
+    let current = moment(startDate).tz('Asia/Ho_Chi_Minh').startOf('isoWeek');
+    let weekNumber = 1;
 
-   while (current.isBefore(moment(endDate).tz('Asia/Ho_Chi_Minh'))) {
-       const weekStart = current.clone();
-       const weekEnd = current.clone().endOf('isoWeek');
-       weeks.push({
-           week: weekNumber,
-           label: `Tuần ${weekNumber}: ${weekStart.format('DD/MM/YYYY')} - ${weekEnd.format('DD/MM/YYYY')}`,
-           value: `${weekStart.format('YYYY-MM-DD')}_${weekEnd.format('YYYY-MM-DD')}`
-       });
-       current.add(1, 'week');
-       weekNumber++;
-   }
-   return weeks;
+    while (current.isBefore(moment(endDate).tz('Asia/Ho_Chi_Minh'))) {
+        const weekStart = current.clone();
+        const weekEnd = current.clone().endOf('isoWeek');
+        weeks.push({
+            week: weekNumber,
+            label: `Tuần ${weekNumber}: ${weekStart.format('DD/MM/YYYY')} - ${weekEnd.format('DD/MM/YYYY')}`,
+            value: `${weekStart.format('YYYY-MM-DD')}_${weekEnd.format('YYYY-MM-DD')}`
+        });
+        current.add(1, 'week');
+        weekNumber++;
+    }
+    return weeks;
 }
 
 
-module.exports = function(poolPromise) {
+module.exports = function (poolPromise) {
     const router = express.Router();
 
-	// --- BỔ SUNG API MỚI: Tra cứu học phí sinh viên ---
+    // --- BỔ SUNG API MỚI: Tra cứu học phí sinh viên ---
     router.get('/search-tuition', async (req, res) => {
         const searchTerm = req.query.searchTerm || '';
         if (!searchTerm) {
@@ -46,7 +48,7 @@ module.exports = function(poolPromise) {
 
         try {
             const pool = await poolPromise;
-            
+
             // Lấy học kỳ mới nhất có thông báo học phí
             const latestHkResult = await pool.request().query('SELECT TOP 1 MaHK FROM db_ThongbaoHocphiHK ORDER BY MaHK DESC');
             if (latestHkResult.recordset.length === 0) {
@@ -87,7 +89,7 @@ module.exports = function(poolPromise) {
                     AND hp.MaKT = '555'
                     AND hp.MaHK = @latestMaHK;
             `;
-            
+
             const result = await request.query(query);
 
             if (result.recordset.length === 0) {
@@ -141,7 +143,7 @@ module.exports = function(poolPromise) {
         }
     });
 
-    
+
     // --- API: Tra cứu thông tin thí sinh xét tuyển (giữ nguyên) ---
     router.get('/search', async (req, res) => {
         const searchTerm = req.query.searchTerm || '';
@@ -153,7 +155,7 @@ module.exports = function(poolPromise) {
         try {
             const pool = await poolPromise;
             const request = new sql.Request(pool);
-            
+
             let query = `
                 SELECT 
                     ts.MaTSXT, ts.Maso, ts.Holot, ts.Ten, 
@@ -174,10 +176,10 @@ module.exports = function(poolPromise) {
                     ts.Maso = @SearchTermAsMaSo OR ts.SoCMND = @SearchTermAsCMND OR
                     LOWER(CONCAT(ts.Holot, N' ', ts.Ten)) LIKE LOWER(@SearchTermAsHoTen)
                 )
-            `;  
-                    
+            `;
+
             request.input('SearchTermAsMaSo', sql.NVarChar, searchTerm);
-			request.input('SearchTermAsCMND', sql.NVarChar, searchTerm);
+            request.input('SearchTermAsCMND', sql.NVarChar, searchTerm);
             request.input('SearchTermAsHoTen', sql.NVarChar, `%${searchTerm.trim()}%`);
 
             const result = await request.query(query);
@@ -185,7 +187,7 @@ module.exports = function(poolPromise) {
             if (result.recordset.length === 0) {
                 return res.status(404).json({ error: 'Không tìm thấy thông tin phù hợp. Hãy kiểm tra dữ liệu cần tìm!' });
             }
-            
+
             const maTSXT = result.recordset[0].MaTSXT;
 
             const nguyenVongQuery = `
@@ -198,16 +200,16 @@ module.exports = function(poolPromise) {
                 WHERE nv.MaTSXT = @MaTSXT
                 ORDER BY nv.MaNVXT
             `;
-            const nguyenVongResult = await new sql.Request(pool).input('MaTSXT', sql.NVarChar, maTSXT).query(nguyenVongQuery);  
-                    
+            const nguyenVongResult = await new sql.Request(pool).input('MaTSXT', sql.NVarChar, maTSXT).query(nguyenVongQuery);
+
             const monXetTuyenQuery = `
                 SELECT 
                     mxt.MonXT, ts_mxt.Diem
                 FROM ThisinhXTMonXT ts_mxt
                 INNER JOIN MonXT mxt ON ts_mxt.MaMXT = mxt.MaMXT
                 WHERE ts_mxt.MaTSXT = @MaTSXT
-            `;  
-            const monXetTuyenResult = await new sql.Request(pool).input('MaTSXT', sql.NVarChar, maTSXT).query(monXetTuyenQuery);  
+            `;
+            const monXetTuyenResult = await new sql.Request(pool).input('MaTSXT', sql.NVarChar, maTSXT).query(monXetTuyenQuery);
 
             const formattedData = result.recordset.map(item => ({
                 MaSo: item.Maso,
@@ -226,23 +228,23 @@ module.exports = function(poolPromise) {
                 NganhNghe: item.NganhNghe,
                 TrinhDo: item.TrinhDo,
                 NguyenVong: nguyenVongResult.recordset.map(nv => ({
-                                MaNVXT: nv.MaNVXT,
-                                NganhNghe: nv.NganhNghe,
-                                TrinhDo: nv.TrinhDo,
-                                DiemXT: parseFloat(nv.TongDXT || 0).toFixed(2),
-                                Trungtuyen: nv.Trungtuyen
-                        })),
+                    MaNVXT: nv.MaNVXT,
+                    NganhNghe: nv.NganhNghe,
+                    TrinhDo: nv.TrinhDo,
+                    DiemXT: parseFloat(nv.TongDXT || 0).toFixed(2),
+                    Trungtuyen: nv.Trungtuyen
+                })),
                 MonXetTuyen: monXetTuyenResult.recordset.map(mxt => ({
-                                MonXT: mxt.MonXT,
-                                Diem: parseFloat(mxt.Diem || 0).toFixed(1)
-                        }))
+                    MonXT: mxt.MonXT,
+                    Diem: parseFloat(mxt.Diem || 0).toFixed(1)
+                }))
             }));
 
             res.json(formattedData);
-            
+
         } catch (err) {
             console.error('Lỗi truy vấn tra cứu thí sinh:', err);
-            res.status(500).json({ error: 'Lỗi khi truy vấn cơ sở dữ liệu.' }); 
+            res.status(500).json({ error: 'Lỗi khi truy vấn cơ sở dữ liệu.' });
         }
     });
 
@@ -280,7 +282,7 @@ module.exports = function(poolPromise) {
             `;
 
             request.input('SearchTerm', sql.NVarChar, searchTerm);
-			request.input('SearchTermCMND', sql.NVarChar, searchTerm);
+            request.input('SearchTermCMND', sql.NVarChar, searchTerm);
             request.input('SearchTermLike', sql.NVarChar, `%${searchTerm.trim()}%`);
 
             const result = await request.query(query);
@@ -288,7 +290,7 @@ module.exports = function(poolPromise) {
             if (result.recordset.length === 0) {
                 return res.status(404).json({ error: 'Không tìm thấy sinh viên.' });
             }
-            
+
             const students = result.recordset.map(student => {
                 const today = moment();
                 const endDate = student.MaxNgayKetThuc ? moment(student.MaxNgayKetThuc) : null;
@@ -300,7 +302,7 @@ module.exports = function(poolPromise) {
                         ketThucKhoa += " (dự kiến)";
                     }
                 }
-                
+
                 let tinhTrangSV = { text: 'Không xác định', colorClass: 'text-gray-500 bg-gray-100' };
                 const tinhtrangCode = student.Tinhtrang;
 
@@ -317,7 +319,7 @@ module.exports = function(poolPromise) {
                 } else if (tinhtrangCode === 3) {
                     tinhTrangSV = { text: 'TỐT NGHIỆP', colorClass: 'text-green-800 bg-green-100' };
                 }
-                
+
                 return {
                     maso: student.Maso,
                     hoTen: `${student.Holot} ${student.Ten}`.toUpperCase(),
@@ -343,7 +345,7 @@ module.exports = function(poolPromise) {
     });
 
     // --- BỔ SUNG API MỚI: Tra cứu sinh viên tốt nghiệp ---
-	router.get('/search-graduates', async (req, res) => {
+    router.get('/search-graduates', async (req, res) => {
         const searchTerm = req.query.searchTerm || '';
         if (!searchTerm) {
             return res.status(400).json({ error: 'Vui lòng nhập thông tin tìm kiếm.' });
@@ -416,13 +418,13 @@ module.exports = function(poolPromise) {
             const pool = await poolPromise;
             const result = await pool.request()
                 .query(`SELECT MaHK, Hocky, Ngaybatdau, Ngayketthuc FROM Hocky WHERE Sotuan>0 ORDER BY MaHK DESC`);
-            
+
             const semesters = result.recordset;
             let defaultSemesterId = null;
 
             if (semesters.length > 0) {
                 const now = moment().tz('Asia/Ho_Chi_Minh');
-                const currentSemester = semesters.find(s => 
+                const currentSemester = semesters.find(s =>
                     s.Ngaybatdau && s.Ngayketthuc && now.isBetween(moment(s.Ngaybatdau), moment(s.Ngayketthuc), null, '[]')
                 );
 
@@ -556,10 +558,10 @@ module.exports = function(poolPromise) {
     });
 */
 
-// --- CẬP NHẬT: API Lấy dữ liệu Thời khóa biểu ---
+    // --- CẬP NHẬT: API Lấy dữ liệu Thời khóa biểu ---
     router.get('/tkb', async (req, res) => {
         // CẬP NHẬT: Thêm searchTerm, bỏ groupBy
-        const { startDate, endDate, searchTerm } = req.query; 
+        const { startDate, endDate, searchTerm } = req.query;
 
         if (!startDate || !endDate) {
             return res.status(400).json({ msg: 'Vui lòng cung cấp ngày bắt đầu và kết thúc.' });
@@ -570,7 +572,7 @@ module.exports = function(poolPromise) {
             const request = new sql.Request(pool);
             request.input('startDate', sql.Date, startDate);
             request.input('endDate', sql.Date, endDate);
-            
+
             // CẬP NHẬT: Thêm điều kiện tìm kiếm
             let searchCondition = '';
             if (searchTerm) {
@@ -584,7 +586,7 @@ module.exports = function(poolPromise) {
                     )
                 `;
             }
-            
+
             // CẬP NHẬT: Sắp xếp cố định theo Tên lớp HP
             const orderByClause = 'ORDER BY LopHP.Tenlop, TKB_CTE.Ngay, TKB_CTE.Tiet';
 
@@ -595,8 +597,11 @@ module.exports = function(poolPromise) {
                 )
                 SELECT 
                     Hocky.MaHK, Hocky.Hocky, Donvi.Donvi, LopHP.Tenlop, LopHP.MaLHP, 
-                    Hocphan.Viettat AS TenHP, Hocphan.Hocphan, Phonghoc.Tenphong, 
-                    (Giaovien.Holot + N' ' + Giaovien.Ten) AS HoTenGV, 
+                    Hocphan.Viettat AS TenHP, Hocphan.Hocphan, 
+                    Phonghoc.Tenphong,
+                    Nhomphong.Nhomphong,
+                    Phonghoc.MaLP,
+                    ISNULL(Hocvi.Viettat + N' ', N'') + Giaovien.Holot + N' ' + Giaovien.Ten AS HoTenGV, 
                     TKB_CTE.Ngay, TKB_CTE.Tiet, TKB_CTE.Sotiet, TKB_CTE.Ghichu, TKB_CTE.Hieuluc,
                     LopHP.Tongsotiet, TKB_CTE.SoTietTichLuy
                 FROM Hocphan 
@@ -604,6 +609,8 @@ module.exports = function(poolPromise) {
                 INNER JOIN TKB_CTE ON LopHP.MaLHP = TKB_CTE.MaLHP) ON Giaovien.MaGV = TKB_CTE.MaGV) ON Hocphan.MaHP = LopHP.MaHP
                 INNER JOIN Donvi ON LopHP.MaDV = Donvi.MaDV
                 INNER JOIN Phonghoc ON TKB_CTE.MaPH = Phonghoc.MaPH
+                LEFT JOIN Hocvi ON Giaovien.MaHV = Hocvi.MaHV
+                LEFT JOIN Nhomphong ON Phonghoc.MaNP = Nhomphong.MaNP
                 WHERE (TKB_CTE.Ngay BETWEEN @startDate AND @endDate)
                 ${searchCondition}
                 ${orderByClause};

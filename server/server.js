@@ -1,8 +1,9 @@
 ﻿/*
 * Đường dẫn file: D:\QLDT-app\server\server.js
-* Phiên bản cập nhật: 22/01/2026
+* Phiên bản cập nhật: 05/02/2026
  * Tóm tắt những nội dung cập nhật:
- * Bổ sung "Dashboard Tiến độ đào tạo"
+ * Bổ sung "Tạo phòng thi"
+ * Bổ sung "Xep lich thi"
 */
 
 // --- 1. IMPORT CÁC THƯ VIỆN CẦN THIẾT ---
@@ -20,7 +21,7 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 
 // ---2. ĐỊNH DANH PHIÊN BẢN ỨNG DỤNG ---
-const DEPLOYMENT_VERSION = "2.2.10_260122";
+const DEPLOYMENT_VERSION = "2.4.10_260208";
 
 
 // --- 3. CẤU HÌNH VÀ KẾT NỐI DATABASE ---
@@ -175,6 +176,8 @@ const dotXetTuyenRoutes = require('./routes/dotxettuyen')(poolPromise, writeLog)
 const danhMucLopHocRoutes = require('./routes/danhmuc-lophoc')(poolPromise, writeLog); //DM lớp sinh hoạt
 const lichgiangdayRoutes = require('./routes/lich-giang-day')(poolPromise); // Lịch giảng dạy
 const nhapdiemthiRoutes = require('./routes/nhap-diem-thi')(poolPromise); // Nhập điểm thi
+// BỔ SUNG 05/02/2026: Tạo phòng thi
+const examRoomManagementRoutes = require('./routes/exam-room-management')(poolPromise, writeLog);
 // BỔ SUNG 22/01/2026: Dashboard tiến độ đào tạo
 const dashboardTrainingRouter = require('./routes/dashboard-training')(poolPromise, authenticateToken);
 
@@ -215,6 +218,8 @@ apiRouter.use('/danhmuc-lophoc', authenticateToken, danhMucLopHocRoutes);
 apiRouter.use('/lich-giang-day', authenticateToken, lichgiangdayRoutes);
 // Sử dụng route "Nhập điểm thi" 
 apiRouter.use('/nhap-diem-thi', authenticateToken, canManageCreditClasses, nhapdiemthiRoutes);
+// BỔ SUNG 05/02/2026: Tạo phòng thi - Yêu cầu quyền QL lớp HP
+apiRouter.use('/exam-room-management', authenticateToken, canManageCreditClasses, examRoomManagementRoutes);
 // BỔ SUNG 22/01/2026: Dashboard tiến độ đào tạo - Mọi người dùng đăng nhập đều xem được
 apiRouter.use('/dashboard-training', dashboardTrainingRouter);
 

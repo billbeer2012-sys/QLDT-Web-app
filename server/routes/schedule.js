@@ -1,19 +1,16 @@
 /*
 * Đường dẫn file: D:\QLDT-app\server\routes\schedule.js
-* Thời gian cập nhật: 28/09/2025
+* Thời gian cập nhật: 28/01/2026
 * Tóm tắt những nội dung cập nhật:
-* - Cải tiến toàn diện API cho trang Xem TKB nội bộ để giống trang public.
-* - API /semesters: Bổ sung logic tính toán và trả về học kỳ mặc định.
-* - API /data:
-* + Bỏ tham số và logic gom nhóm `groupBy`.
-* + Thêm tham số `searchTerm` để lọc kết quả.
-* + Dữ liệu trả về được gom nhóm theo Tên lớp học phần (Tenlop) và sắp xếp theo thứ tự ABC.
+* - Thêm Học vị cho Giảng viên.
+* - Thêm nhóm phòng sau tên phòng
+* - Địn dạng màu nền cho các ô thời khóa biểu: Lý thuyết, Thực hành, Trực tuyến
 */
 const express = require('express');
 const sql = require('mssql');
 const moment = require('moment-timezone'); // Bổ sung moment
 
-module.exports = function(poolPromise, calculateWeeks) {
+module.exports = function (poolPromise, calculateWeeks) {
     const router = express.Router();
 
     // CẬP NHẬT: API Lấy danh sách học kỳ
@@ -26,13 +23,13 @@ module.exports = function(poolPromise, calculateWeeks) {
                 WHERE Sotuan > 0 
                 ORDER BY MaHK DESC
             `);
-            
+
             const semesters = result.recordset;
             let defaultSemesterId = null;
 
             if (semesters.length > 0) {
                 const now = moment().tz('Asia/Ho_Chi_Minh');
-                const currentSemester = semesters.find(s => 
+                const currentSemester = semesters.find(s =>
                     s.Ngaybatdau && s.Ngayketthuc && now.isBetween(moment(s.Ngaybatdau), moment(s.Ngayketthuc), null, '[]')
                 );
 
@@ -47,7 +44,7 @@ module.exports = function(poolPromise, calculateWeeks) {
                     }
                 }
             }
-             if (!defaultSemesterId && semesters.length > 0) {
+            if (!defaultSemesterId && semesters.length > 0) {
                 defaultSemesterId = semesters[0].MaHK;
             }
 
@@ -102,7 +99,7 @@ module.exports = function(poolPromise, calculateWeeks) {
             const request = new sql.Request(pool);
             request.input('startDate', sql.Date, startDate);
             request.input('endDate', sql.Date, endDate);
-            
+
             let searchCondition = '';
             if (searchTerm) {
                 request.input('searchTerm', sql.NVarChar, `%${searchTerm}%`);
@@ -118,6 +115,7 @@ module.exports = function(poolPromise, calculateWeeks) {
 
             const orderByClause = 'ORDER BY LopHP.Tenlop, TKB_CTE.Ngay, TKB_CTE.Tiet';
 
+
             const tkbQuery = `
                 WITH TKB_CTE AS (
                     SELECT *, 
@@ -129,8 +127,10 @@ module.exports = function(poolPromise, calculateWeeks) {
                     LopHP.Tenlop, 
                     Hocphan.Viettat AS TenHP, 
                     Hocphan.Hocphan, 
-                    Phonghoc.Tenphong, 
-                    (Giaovien.Holot + N' ' + Giaovien.Ten) AS HoTenGV, 
+                    Phonghoc.Tenphong,
+                    Nhomphong.Nhomphong,
+                    Phonghoc.MaLP,
+                    ISNULL(Hocvi.Viettat + N' ', N'') + Giaovien.Holot + N' ' + Giaovien.Ten AS HoTenGV, 
                     TKB_CTE.Ngay, TKB_CTE.Tiet, TKB_CTE.Sotiet, TKB_CTE.Ghichu,
                     LopHP.Tongsotiet, 
                     TKB_CTE.SoTietTichLuy
@@ -139,6 +139,8 @@ module.exports = function(poolPromise, calculateWeeks) {
                 INNER JOIN TKB_CTE ON LopHP.MaLHP = TKB_CTE.MaLHP) ON Giaovien.MaGV = TKB_CTE.MaGV) ON Hocphan.MaHP = LopHP.MaHP
                 INNER JOIN Donvi ON LopHP.MaDV = Donvi.MaDV
                 INNER JOIN Phonghoc ON TKB_CTE.MaPH = Phonghoc.MaPH
+                LEFT JOIN Hocvi ON Giaovien.MaHV = Hocvi.MaHV
+                LEFT JOIN Nhomphong ON Phonghoc.MaNP = Nhomphong.MaNP
                 WHERE (TKB_CTE.Ngay BETWEEN @startDate AND @endDate)
                 ${searchCondition}
                 ${orderByClause};

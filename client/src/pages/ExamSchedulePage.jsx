@@ -49,7 +49,7 @@ const PageNavbar = ({
     return (
         <div className="bg-white dark:bg-gray-800 p-3 rounded-lg shadow-md mb-4 flex flex-wrap items-center gap-4">
             <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-gray-500"/>
+                <Calendar className="w-5 h-5 text-gray-500" />
                 <select value={selectedSemester} onChange={onSemesterChange} disabled={loading} className="p-2 border-2 border-gray-300 rounded-md dark:bg-gray-700 bg-white focus:border-blue-500 focus:ring-blue-500 min-w-[250px]">
                     {loading ? <option>Đang tải...</option> : semesters.map(s => (
                         <option key={s.MaHK} value={s.MaHK}>{`${s.Hocky} (${moment(s.Ngaybatdau).format('DD/MM/YYYY')} - ${moment(s.Ngayketthuc).format('DD/MM/YYYY')})`}</option>
@@ -69,7 +69,7 @@ const PageNavbar = ({
                 <input type="text" placeholder="Tìm lần thi, tên học phần, ngày thi..." value={searchTerm} onChange={onSearchChange} className="w-full pl-10 pr-4 py-2 border rounded-md dark:bg-gray-700" />
             </div>
             <button onClick={onExport} className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center gap-2 hover:bg-green-700 transition-colors ml-auto">
-                <FileDown className="w-4 h-4"/> 
+                <FileDown className="w-4 h-4" />
             </button>
         </div>
     );
@@ -78,10 +78,10 @@ const PageNavbar = ({
 // --- COMPONENT CHÍNH CỦA TRANG ---
 const ExamSchedulePage = () => {
     //Bước 2: Gọi ghi log
-	// Tên '...' sẽ được ghi vào cột 'Cuaso'
-	usePageLogger('Xem Lịch thi');
+    // Tên '...' sẽ được ghi vào cột 'Cuaso'
+    usePageLogger('Xem Lịch thi');
 
-	const [semesters, setSemesters] = useState([]);
+    const [semesters, setSemesters] = useState([]);
     const [schedules, setSchedules] = useState([]);
     const [selectedSemester, setSelectedSemester] = useState('');
     const [searchTerm, setSearchTerm] = useState('');
@@ -137,7 +137,7 @@ const ExamSchedulePage = () => {
             .catch(err => setError(err.response?.data?.message || "Lỗi khi tải dữ liệu lịch thi."))
             .finally(() => setLoading(prev => ({ ...prev, schedules: false })));
     }, [selectedSemester, filters, debouncedSearchTerm]);
-    
+
     useEffect(() => {
         fetchSchedules();
     }, [fetchSchedules]);
@@ -146,7 +146,7 @@ const ExamSchedulePage = () => {
         const { name, value } = e.target;
         setFilters(prev => ({ ...prev, [name]: value }));
     };
-    
+
     const handleExport = () => {
         if (schedules.length === 0) {
             toast.error("Không có dữ liệu để xuất.");
@@ -172,15 +172,15 @@ const ExamSchedulePage = () => {
                 XEM LỊCH THI
             </h1>
 
-            <PageNavbar 
-                semesters={semesters} 
-                selectedSemester={selectedSemester} 
+            <PageNavbar
+                semesters={semesters}
+                selectedSemester={selectedSemester}
                 onSemesterChange={e => setSelectedSemester(e.target.value)}
-                filters={filters} 
+                filters={filters}
                 onFilterChange={handleFilterChange}
-                searchTerm={searchTerm} 
+                searchTerm={searchTerm}
                 onSearchChange={e => setSearchTerm(e.target.value)}
-                onExport={handleExport} 
+                onExport={handleExport}
                 loading={loading.semesters}
             />
 
@@ -232,7 +232,7 @@ const ExamSchedulePage = () => {
                         </tbody>
                     </table>
                 )}
-                { !loading.schedules && !error && schedules.length === 0 && (
+                {!loading.schedules && !error && schedules.length === 0 && (
                     <div className="text-center py-10 text-gray-500"><p>Không có lịch thi nào phù hợp với điều kiện lọc.</p></div>
                 )}
             </div>

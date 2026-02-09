@@ -1,8 +1,11 @@
 /*
 * Đường dẫn file: D:\QLDT-app\client\src\pages\SchedulePage.jsx
-* Cập nhật: 25/10/2025
- * Tóm tắt: Bổ sung log khi mở trang
- */
+* Thời gian cập nhật: 28/01/2026
+* Tóm tắt những nội dung cập nhật:
+* - Thêm Học vị cho Giảng viên.
+* - Thêm nhóm phòng sau tên phòng
+* - Địn dạng màu nền cho các ô thời khóa biểu: Lý thuyết, Thực hành, Trực tuyến
+*/
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import axiosInstance from '../api/axios';
 import moment from 'moment-timezone';
@@ -61,6 +64,25 @@ const SearchInput = ({ value, onChange, icon, placeholder }) => (
     </div>
 );
 
+// BỔ SUNG: Component chú thích màu sắc các buổi học
+const ScheduleLegend = () => (
+    <div className="flex flex-wrap items-center gap-4 mt-2 p-2 bg-gray-100 dark:bg-gray-700 rounded-md text-sm">
+        <span className="font-medium text-gray-600 dark:text-gray-300">Ghi chú:</span>
+        <div className="flex items-center gap-1.5">
+            <span className="w-4 h-4 rounded bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600"></span>
+            <span>Lý thuyết</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+            <span className="w-4 h-4 rounded bg-blue-400"></span>
+            <span>Thực hành</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+            <span className="w-4 h-4 rounded bg-green-700"></span>
+            <span>Trực tuyến</span>
+        </div>
+    </div>
+);
+
 
 const ScheduleTable = ({ group, weekStartDate }) => {
     const grid = useMemo(() => {
@@ -72,18 +94,22 @@ const ScheduleTable = ({ group, weekStartDate }) => {
                 const cumulativeHtml =
                     item.Tongsotiet > 0 ? (
                         <span
-                            className={`${infoLineClass} text-xs font-normal ${
-                                item.SoTietTichLuy >= item.Tongsotiet
-                                    ? 'bg-yellow-200 dark:bg-yellow-800/50'
-                                    : 'text-amber-600 dark:text-amber-400'
-                            }`}
+                            className={`${infoLineClass} text-xs font-normal ${item.SoTietTichLuy >= item.Tongsotiet
+                                ? 'bg-yellow-200 dark:bg-yellow-800/50'
+                                : 'text-amber-600 dark:text-amber-400'
+                                }`}
                         >
                             <Calculator className="w-3 h-3 inline mr-1.5" />
                             {item.SoTietTichLuy}/{item.Tongsotiet}
                         </span>
                     ) : null;
-                
+
                 // Cố định hiển thị theo kiểu "Lớp HP"
+                // BỔ SUNG: Hiển thị Nhomphong bên cạnh Tenphong
+                const roomDisplay = item.Nhomphong
+                    ? `${item.Tenphong} (${item.Nhomphong})`
+                    : item.Tenphong;
+
                 const contextualInfo = (
                     <>
                         <span className={`${infoLineClass}`}>
@@ -92,7 +118,7 @@ const ScheduleTable = ({ group, weekStartDate }) => {
                         </span>
                         <span className={`${infoLineClass} text-red-600 dark:text-red-400`}>
                             <DoorOpen className="w-3 h-3 inline mr-1.5" />
-                            {item.Tenphong}
+                            {roomDisplay}
                         </span>
                     </>
                 );
@@ -104,23 +130,37 @@ const ScheduleTable = ({ group, weekStartDate }) => {
                     </div>
                 );
 
+                // BỔ SUNG: Xác định màu nền và màu chữ dựa trên MaLP
+                let cellBgClass = '';
+                let cellTextClass = '';
+                if (item.MaLP === '002') {
+                    // Thực hành - Navy blue
+                    cellBgClass = 'bg-blue-400';
+                    cellTextClass = 'text-white';
+                } else if (item.MaLP === '003') {
+                    // Trực tuyến - Green
+                    cellBgClass = 'bg-green-400';
+                    cellTextClass = 'text-white';
+                }
+
                 newGrid[tietIndex][dayIndex] = {
                     content: (
-                        <div className="p-1.5 text-left text-[13px] flex flex-col h-full">
+                        <div className={`p-1.5 text-left text-[13px] flex flex-col h-full ${cellBgClass} ${cellTextClass}`}>
                             {firstLine}
                             {item.Ghichu && (
-                                <span className={`${infoLineClass} text-xs text-amber-600 dark:text-amber-400`}>
+                                <span className={`${infoLineClass} text-xs ${cellTextClass || 'text-amber-600 dark:text-amber-400'}`}>
                                     <Info className="w-3 h-3 inline mr-1.5" />
                                     {item.Ghichu}
                                 </span>
                             )}
-                            <div className="mt-1 space-y-0.5 text-blue-600 dark:text-blue-400 font-medium flex-grow">
+                            <div className={`mt-1 space-y-0.5 ${cellTextClass || 'text-blue-600 dark:text-blue-400'} font-medium flex-grow`}>
                                 {contextualInfo}
                             </div>
                             {cumulativeHtml}
                         </div>
                     ),
                     rowspan: item.Sotiet,
+                    cellBgClass,
                 };
 
                 for (let i = 1; i < item.Sotiet; i++) {
@@ -152,8 +192,8 @@ const ScheduleTable = ({ group, weekStartDate }) => {
                 </thead>
                 <tbody>
                     {Array.from({ length: 12 }).map((_, i) => {
-                        const isAfternoon = i >= 6;
-                        const rowClass = isAfternoon ? 'bg-amber-50 dark:bg-gray-800' : 'bg-blue-50 dark:bg-gray-900/50';
+                        // BỔ SUNG: Loại bỏ màu nền phân biệt buổi chiều
+                        const rowClass = 'bg-blue-50 dark:bg-gray-900/50';
                         const dividerClass = i === 6 ? 'border-t-2 border-blue-300 dark:border-blue-700' : '';
                         return (
                             <tr key={i} className={`${rowClass} ${dividerClass}`}>
@@ -163,7 +203,7 @@ const ScheduleTable = ({ group, weekStartDate }) => {
                                     </td>
                                 )}
                                 {i === 6 && (
-                                    <td rowSpan="6" className="text-center font-bold bg-amber-100 dark:bg-amber-800">
+                                    <td rowSpan="6" className="text-center font-bold bg-blue-100 dark:bg-blue-900">
                                         CHIỀU
                                     </td>
                                 )}
@@ -194,10 +234,10 @@ const ScheduleTable = ({ group, weekStartDate }) => {
 
 const SchedulePage = () => {
     //Bước 2: Gọi ghi log
-	// Tên '...' sẽ được ghi vào cột 'Cuaso'
-	usePageLogger('Xem TKB');
+    // Tên '...' sẽ được ghi vào cột 'Cuaso'
+    usePageLogger('Xem TKB');
 
-	const [semesters, setSemesters] = useState([]);
+    const [semesters, setSemesters] = useState([]);
     const [weeks, setWeeks] = useState([]);
     const [scheduleData, setScheduleData] = useState([]);
     const [selectedSemester, setSelectedSemester] = useState('');
@@ -205,7 +245,7 @@ const SchedulePage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [loading, setLoading] = useState({ semesters: true, weeks: false, schedule: false });
     const [error, setError] = useState('');
-    
+
     const debouncedSearchTerm = useDebounce(searchTerm, 400);
 
     useEffect(() => {
@@ -214,7 +254,7 @@ const SchedulePage = () => {
                 const res = await axiosInstance.get('/schedule/semesters');
                 const { semesters, defaultSemester } = res.data;
                 setSemesters(semesters);
-                
+
                 if (defaultSemester) {
                     setSelectedSemester(defaultSemester);
                 } else if (semesters.length > 0) {
@@ -294,7 +334,7 @@ const SchedulePage = () => {
                 <h1 className="text-2xl font-bold text-blue-800 dark:text-white mb-4 text-center uppercase">THỜI KHÓA BIỂU</h1>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-lg mb-4">
+            <div className="bg-white dark:bg-gray-800 p-2 rounded-lg shadow-lg mb-2">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <ControlSelect
                         label="Học kỳ"
@@ -314,6 +354,8 @@ const SchedulePage = () => {
                         placeholder="Nhập tên GV, học phần, phòng..."
                         icon={<Search className="w-5 h-5 text-blue-500" />} />
                 </div>
+                {/* BỔ SUNG: Chú thích màu sắc */}
+                <ScheduleLegend />
             </div>
 
             {loading.schedule ? (
